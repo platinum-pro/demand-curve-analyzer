@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Citation · Demand Curve Analyzer — PROMISE Labs Africa</title>
+<meta name="description" content="How to cite the Demand Curve Analyzer, a project of PROMISE Labs Africa.">
+<link rel="stylesheet" href="assets/css/style.css?v=2.1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <img src="assets/images/promise-labs-header.png" alt="PROMISE Labs Africa" class="brand-logo">
+      <span>Demand Curve Analyzer</span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="site-nav">
+      <a href="methods.html">Methods</a>
+      <a href="about.html">About</a>
+      <a href="citation.html">Citation</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <h1>Citation</h1>
+    <p class="lede">
+      If the Demand Curve Analyzer contributed to your research, please cite it
+      using the suggested citation below.
+    </p>
+
+    <h2>How to cite</h2>
+    <blockquote class="citation-block" id="citation-text">
+      Tewogbola, P. (2026). <em>Demand Curve Analyzer</em> (Version 1.0)
+      [Computer software]. PROMISE Labs Africa.
+      <a href="https://analyzer.promiselabs.africa/">https://analyzer.promiselabs.africa/</a>
+    </blockquote>
+    <button id="copy-citation" class="cta" type="button">Copy citation</button>
+    <span id="copy-feedback" class="copy-feedback"></span>
+
+    <h2>Underlying model</h2>
+    <p>
+      Analyses produced by this tool fit the exponentiated demand model — please
+      also cite:
+    </p>
+    <blockquote class="citation-block">
+      Koffarnus, M. N., Franck, C. T., Stein, J. S., &amp; Bickel, W. K. (2015).
+      A modified exponential behavioral economic demand model to better describe
+      consumption data. <em>Experimental and Clinical Psychopharmacology, 23</em>(6),
+      504–512. <a href="https://doi.org/10.1037/pha0000045" target="_blank" rel="noopener">https://doi.org/10.1037/pha0000045</a>
+    </blockquote>
+
+    <h2>Contact</h2>
+    <p>PROMISE Labs Africa — <a href="mailto:info@promiselabs.africa">info@promiselabs.africa</a></p>
+
+    <h2>License</h2>
+    <p>
+      The site's code is licensed under
+      <a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT</a>.
+      Your data stays in your browser — nothing you upload is stored or transmitted.
+    </p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Demand Curve Analyzer &middot; a project of
+      <a href="https://promiselabs.africa/" target="_blank" rel="noopener">PROMISE Labs Africa</a>
+      &middot; maintained by Promise Tewogbola &middot; your data is processed in your browser and never uploaded
+      &middot; <a href="https://givebutter.com/9jm8ui" target="_blank" rel="noopener">Donate</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var copyBtn = document.getElementById("copy-citation");
+  var feedback = document.getElementById("copy-feedback");
+  if (!copyBtn) return;
+
+  copyBtn.addEventListener("click", function () {
+    var citationEl = document.getElementById("citation-text");
+    var text = citationEl.textContent.replace(/\s+/g, " ").trim();
+
+    function showFeedback(message) {
+      if (!feedback) return;
+      feedback.textContent = message;
+      setTimeout(function () { feedback.textContent = ""; }, 2500);
+    }
+
+    function selectFallback() {
+      var range = document.createRange();
+      range.selectNodeContents(citationEl);
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      showFeedback("Couldn't auto-copy — text selected, press Ctrl/Cmd+C");
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showFeedback("Copied ✓");
+      }, selectFallback);
+    } else {
+      selectFallback();
+    }
+  });
+})();
+</script>
+<script src="assets/js/nav.js?v=1.5"></script>
+</body>
+</html>

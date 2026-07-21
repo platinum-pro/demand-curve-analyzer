@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methods · Demand Curve Analyzer — PROMISE Labs Africa</title>
+<meta name="description" content="How the Demand Curve Analyzer aggregates survey data and fits the exponentiated demand model (Koffarnus et al., 2015).">
+<link rel="stylesheet" href="assets/css/style.css?v=2.1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <img src="assets/images/promise-labs-header.png" alt="PROMISE Labs Africa" class="brand-logo">
+      <span>Demand Curve Analyzer</span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="site-nav">
+      <a href="methods.html">Methods</a>
+      <a href="about.html">About</a>
+      <a href="citation.html">Citation</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page-methods">
+  <div class="wrap">
+    <h1>Methods</h1>
+    <p class="lede">
+      How the analyzer turns respondent-level hypothetical purchase task (HPT)
+      data into aggregate demand curves, and exactly how the model is fitted.
+    </p>
+
+    <h2>Data &amp; aggregation</h2>
+    <p>
+      The analyzer accepts wide-format survey data: one row per respondent, one
+      column per price point. Depending on the response format you select, it
+      aggregates each price column into a single demand value:
+    </p>
+    <ul>
+      <li><strong>Yes/no purchase responses</strong> — the percentage of
+        respondents who would purchase at that price (respondents with missing
+        or uninterpretable cells are excluded from that price's denominator).</li>
+      <li><strong>Quantities</strong> — the mean number of units respondents
+        report they would purchase at that price.</li>
+    </ul>
+    <p>
+      If a grouping column is selected, the same aggregation runs separately for
+      each group in addition to the full sample ("All"), and each series gets
+      its own fitted curve.
+    </p>
+
+    <h2>The demand model</h2>
+    <p>
+      Aggregated demand is fitted with the exponentiated demand model of
+      Koffarnus, Franck, Stein &amp; Bickel (2015), where <em>Q</em> is
+      predicted demand (% purchasing, or mean units) at price <em>P</em>:
+    </p>
+    <div class="equation">
+      <em>Q</em> = <em>Q</em><sub>0</sub> · 10<sup><em>k</em>(<em>e</em><sup>−<em>αQ</em><sub>0</sub><em>P</em></sup> − 1)</sup>
+    </div>
+
+    <h3 class="param-group">Model parameters</h3>
+    <dl class="param-list">
+      <dt><em>Q</em><sub>0</sub></dt>
+      <dd>Demand intensity — the level of demand when the product is free or
+        nearly free.</dd>
+      <dt><em>α</em> (alpha)</dt>
+      <dd>Rate of change in demand elasticity: larger values mean demand decays
+        faster as price rises.</dd>
+      <dt><em>k</em></dt>
+      <dd><em>k</em> sets how many log<sub>10</sub> units the curve spans,
+        from its value at low prices down to its floor at high prices. It is
+        held fixed at one value across all curves — rather than estimated
+        separately for each — so that differences in the fitted <em>α</em>
+        reflect real differences in demand, not an arbitrary split between
+        the two parameters. The default of 2 is a reasonable starting point
+        for percentage-scale data — demand asymptotes to about 1% of
+        <em>Q</em><sub>0</sub> — and can be changed in the results settings
+        to suit your own data.</dd>
+    </dl>
+
+    <h3 class="param-group">Derived indices</h3>
+    <dl class="param-list">
+      <dt><em>P</em><sub>50</sub></dt>
+      <dd>The price at which 50% of respondents still purchase (for quantity
+        data, the price at which demand falls to half of fitted
+        <em>Q</em><sub>0</sub>), obtained by solving the fitted model for
+        price. It is not reported when the fitted curve never crosses that
+        level, and is flagged as <em>extrapolated</em> when it falls outside
+        the range of prices presented to respondents.</dd>
+      <dt><em>P</em><sub>max</sub></dt>
+      <dd>The price at which demand transitions from inelastic to elastic —
+        below <em>P</em><sub>max</sub>, total spending rises as price rises;
+        above it, spending falls. It is calculated exactly as the price where
+        the slope of the demand curve equals −1 in log–log terms, using the
+        Lambert W function (Gilroy et al., 2019):
+        <em>P</em><sub>max</sub> = −W<sub>0</sub>(−1/(<em>k</em>·ln&nbsp;10)) / (<em>αQ</em><sub>0</sub>).
+        When <em>k</em> is set below ≈ 1.18, demand never reaches unit
+        elasticity and <em>P</em><sub>max</sub> is not reported.</dd>
+      <dt><em>O</em><sub>max</sub></dt>
+      <dd>The value of demand at <em>P</em><sub>max</sub> (price ×
+        predicted demand at that price). For yes/no data this is the
+        <strong>expected revenue per person</strong> offered the product at
+        <em>P</em><sub>max</sub>, since demand there is a purchase rate, not
+        a quantity; for quantity data it is the conventional <strong>peak
+        spending per person</strong>.</dd>
+    </dl>
+    <p>
+      For yes/no data, <em>Q</em> is a percentage (0–100), the same scale
+      shown on the main chart's y-axis — so before it can be multiplied by a
+      price it is first converted to a probability by dividing by 100:
+      revenue at price <em>P</em> = <em>P</em> · <em>Q</em>(<em>P</em>)/100.
+      Multiplying by the raw percentage number instead would give a total
+      across however many people that percentage happens to be “out of,”
+      rather than an unambiguous per-person figure — dividing by 100 first is
+      what lets the result scale cleanly to any group size (for example,
+      multiplying by 10,000 to project revenue for a target population of
+      that size).
+    </p>
+    <p>
+      <em>P</em><sub>max</sub> and <em>O</em><sub>max</sub> are most useful
+      when price in your study represents an actual payment, fee, or
+      cost-recovery mechanism — for example, setting a sustainable premium or
+      program fee. When price instead stands in for something else, such as
+      the intensity of a preference with no real transaction attached, these
+      two indices don't correspond to a decision anyone would act on, and can
+      be disregarded.
+    </p>
+    <p>
+      A revenue curve (price × predicted demand) is available directly below
+      the main chart when <em>P</em><sub>max</sub> is reported.
+      Because the model's demand never falls all the way to zero — it
+      flattens out at a floor near 1% of <em>Q</em><sub>0</sub>, controlled by
+      <em>k</em> — plotting revenue across a very wide price range can make it
+      appear to rise again at extreme prices, purely because a small constant
+      floor of demand is being multiplied by an ever-larger price. To avoid
+      showing this artifact as if it were real, the curve stops once predicted
+      demand falls below 3% of <em>Q</em><sub>0</sub>, and never extends past
+      the highest price actually tested.
+    </p>
+
+    <h3 class="param-group">Fit diagnostic</h3>
+    <dl class="param-list">
+      <dt>R²</dt>
+      <dd>How well the fitted curve describes your data — the proportion of the
+        variability in the aggregated demand values that the curve accounts
+        for. It is computed as 1 − RSS/TSS, where RSS (the residual sum of
+        squares) measures how far the data points fall from the fitted curve,
+        and TSS (the total sum of squares) measures how spread out the data
+        points are overall. Values closer to 1 mean the curve fits the data
+        more closely, while values near zero mean it fits poorly; demand
+        studies commonly report values above 0.9 for aggregate data.</dd>
+    </dl>
+
+    <h2>Fitting procedure</h2>
+    <p>
+      Curves are fitted by bounded nonlinear least squares on the aggregated
+      points at positive prices, replicating
+      <code>nls(..., algorithm&nbsp;=&nbsp;"port")</code> in R with the same
+      constraints (for percentage data: α ∈ [0,&nbsp;0.1],
+      <em>Q</em><sub>0</sub> ∈ [0,&nbsp;100]). The implementation uses
+      Levenberg–Marquardt with analytic gradients and multiple starting values,
+      so it does not depend on a lucky initial guess.
+    </p>
+    <p>
+      If the survey includes a free (price-0) condition, its aggregated value
+      is always shown in the table and plotted at an arbitrary position on the
+      log-scaled price axis (marked “0”). How it enters the model is a
+      setting: <strong>excluded from fitting</strong> (the default),
+      <strong>included as an ordinary data point</strong>, or used to
+      <strong>fix <em>Q</em><sub>0</sub> at the observed price-0
+      demand</strong>, in which case only α is estimated.
+    </p>
+
+    <h2>Individual breakpoints (yes/no data)</h2>
+    <p>
+      For binary purchase data, the analyzer also derives an individual
+      breakpoint for each respondent — the price at which willingness to
+      purchase transitions from “Yes” to “No.”
+    </p>
+    <p>
+      Because binary responses do not support the full set of nonsystematic-data
+      criteria proposed by Stein et al. (2015), including rules based on bounces
+      and reversals from zero, an adapted reversal-based criterion is used:
+      a response pattern is classified as <strong>systematic</strong> when it
+      contains no more than two reversals, defined as adjacent transitions from
+      “No” to “Yes” across the ascending price sequence — that is, endorsement
+      of purchase at a higher price after rejection at a lower price.
+      Respondents whose patterns exceed this threshold are excluded from
+      breakpoint analyses.
+    </p>
+    <p>
+      For eligible respondents, the breakpoint marks the terminal transition to
+      rejection: it is calculated as the <strong>geometric mean of the last
+      “Yes” price and the first “No” price that follows it</strong>. An
+      isolated earlier “No” — the kind of lapse the reversal criterion
+      tolerates — does not define the breakpoint. Respondents who endorse
+      purchase at every price (including any who return to “Yes” at the highest
+      price), or at none, have no computable breakpoint and are counted
+      separately in the summary table.
+    </p>
+
+    <h2>Privacy</h2>
+    <p>
+      All parsing, aggregation, and fitting run in your browser. Nothing you
+      upload is transmitted or stored on any server; sessions are saved only to
+      your browser's local storage on your device.
+    </p>
+
+    <h2>References</h2>
+    <p class="reference">
+      Gilroy, S. P., Kaplan, B. A., Reed, D. D., Hantula, D. A., &amp; Hursh,
+      S. R. (2019). An exact solution for unit elasticity in the exponential
+      model of operant demand. <em>Experimental and Clinical
+      Psychopharmacology, 27</em>(6), 588–597.
+      <a href="https://doi.org/10.1037/pha0000268" target="_blank" rel="noopener">https://doi.org/10.1037/pha0000268</a>
+    </p>
+    <p class="reference">
+      Jacobs, E. A., &amp; Bickel, W. K. (1999). Modeling drug consumption in
+      the clinic using simulation procedures: Demand for heroin and cigarettes
+      in opioid-dependent outpatients. <em>Experimental and Clinical
+      Psychopharmacology, 7</em>(4), 412–426.
+      <a href="https://doi.org/10.1037/1064-1297.7.4.412" target="_blank" rel="noopener">https://doi.org/10.1037/1064-1297.7.4.412</a>
+    </p>
+    <p class="reference">
+      Koffarnus, M. N., Franck, C. T., Stein, J. S., &amp; Bickel, W. K. (2015).
+      A modified exponential behavioral economic demand model to better describe
+      consumption data. <em>Experimental and Clinical Psychopharmacology,
+      23</em>(6), 504–512.
+      <a href="https://doi.org/10.1037/pha0000045" target="_blank" rel="noopener">https://doi.org/10.1037/pha0000045</a>
+    </p>
+    <p class="reference">
+      Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., &amp;
+      Bickel, W. K. (2015). Identification and management of nonsystematic
+      purchase task data: Toward best practice. <em>Experimental and Clinical
+      Psychopharmacology, 23</em>(5), 377–386.
+      <a href="https://doi.org/10.1037/pha0000020" target="_blank" rel="noopener">https://doi.org/10.1037/pha0000020</a>
+    </p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Demand Curve Analyzer &middot; a project of
+      <a href="https://promiselabs.africa/" target="_blank" rel="noopener">PROMISE Labs Africa</a>
+      &middot; maintained by Promise Tewogbola &middot; your data is processed in your browser and never uploaded
+      &middot; <a href="https://givebutter.com/9jm8ui" target="_blank" rel="noopener">Donate</a></p>
+  </div>
+</footer>
+
+<script src="assets/js/nav.js?v=1.5"></script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demand Curve Analyzer — PROMISE Labs Africa</title>
+<meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015) — entirely in your browser.">
+<link rel="stylesheet" href="assets/css/style.css?v=2.1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <img src="assets/images/promise-labs-header.png" alt="PROMISE Labs Africa" class="brand-logo">
+      <span>Demand Curve Analyzer</span>
+    </a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="site-nav">
+      <a href="methods.html">Methods</a>
+      <a href="about.html">About</a>
+      <a href="citation.html">Citation</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <p class="lede">
+      Upload hypothetical purchase task (HPT) survey data in wide format, aggregate
+      responses at each price, and fit the exponentiated demand model
+      (Koffarnus et&nbsp;al., 2015) — overall and by group. Everything runs in your
+      browser: your data never leaves your computer, and your session is saved
+      locally so you can pick up where you stopped.
+    </p>
+
+    <div id="resume-banner" class="banner" style="display:none;">
+      <span id="resume-text"></span>
+      <span class="actions">
+        <button id="resume-btn" class="primary">Resume session</button>
+        <button id="discard-btn">Start fresh</button>
+      </span>
+    </div>
+
+    <div class="stepper" id="stepper">
+      <span class="step-pill" data-step="1"><span class="num">1</span> Upload data</span>
+      <span class="step-pill" data-step="2"><span class="num">2</span> Clean &amp; recode</span>
+      <span class="step-pill" data-step="3"><span class="num">3</span> Map columns</span>
+      <span class="step-pill" data-step="4"><span class="num">4</span> Results</span>
+    </div>
+
+    <!-- STEP 1 -->
+    <section class="step" id="step-1">
+      <h2>Upload your survey data</h2>
+      <p class="hint">
+        Wide format: one row per respondent, one column per price point. Cells hold
+        either a yes/no purchase response (e.g. <code>1</code>/<code>0</code>,
+        <code>Yes</code>/<code>No</code>) or a quantity the respondent would buy.
+        Extra columns (ID, sex, site, condition…) are fine — you can use one for
+        group comparisons. CSV or Excel (.xlsx).
+      </p>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button"
+           aria-label="Upload a CSV or Excel file">
+        <strong>Drop a CSV or Excel file here</strong> or click to browse
+        <div class="sub">Nothing is uploaded to any server — parsing happens in your browser.</div>
+      </div>
+      <input type="file" id="file-input" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none;">
+      <div class="btn-row">
+        <button id="sample-btn" class="quiet">No data handy? Try the sample dataset →</button>
+      </div>
+      <div id="upload-error" class="banner warn" style="display:none;"></div>
+    </section>
+
+    <!-- STEP 2: CLEAN & RECODE (optional) -->
+    <section class="step" id="step-2">
+      <h2>Clean &amp; recode <span class="note" style="font-weight:400;">(optional)</span></h2>
+      <p class="hint">
+        Build new grouping variables or exclude rows. Your uploaded values are never
+        modified — your recodes are applied on top of them and saved with your session.
+        Blank cells in price columns are already treated as missing automatically.
+      </p>
+
+      <h3>New grouping variable</h3>
+      <p class="hint">
+        Create a new column by recoding an existing one — collapse categories
+        (sites → regions) or bin numbers into ranges (age → age groups). The
+        original column is kept; the new one appears as a grouping option in the
+        next step.
+      </p>
+      <div id="derived-list"></div>
+      <div class="field">
+        <label for="derive-src">Source column</label>
+        <select id="derive-src"></select>
+      </div>
+      <div class="field">
+        <label for="derive-name">New column name</label>
+        <input type="text" id="derive-name" placeholder="e.g. region">
+      </div>
+      <div id="derive-rules"></div>
+      <div class="btn-row">
+        <button id="derive-add">Add column</button>
+      </div>
+
+      <h3>Exclude rows</h3>
+      <p class="hint">Drop respondents from all analyses by a column value (e.g. a failed attention check).</p>
+      <div class="field">
+        <label for="filter-col">Column</label>
+        <select id="filter-col"></select>
+      </div>
+      <div id="filter-values" class="filter-values"></div>
+      <p class="hint" id="filter-summary"></p>
+
+      <div class="btn-row">
+        <button id="back-clean">← Back to upload</button>
+        <button id="dl-clean">Download cleaned CSV</button>
+        <span class="spacer"></span>
+        <button id="to-map" class="primary">Continue to mapping →</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: MAP -->
+    <section class="step" id="step-3">
+      <h2>Map your columns</h2>
+      <p class="hint" id="map-summary"></p>
+
+      <div class="field">
+        <label>What do the cells contain?</label>
+        <div class="radio-row">
+          <label><input type="radio" name="mode" value="binary" checked>
+            <span>Yes/no purchase responses
+              <span class="note">Aggregated as the % of respondents purchasing at each price</span>
+            </span>
+          </label>
+          <label><input type="radio" name="mode" value="quantity">
+            <span>Quantities / units purchased
+              <span class="note">Aggregated as mean consumption at each price</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="group-select">Group comparison column <span class="note">(optional)</span></label>
+        <select id="group-select"></select>
+        <span class="note">Fits a separate curve for each group, alongside the overall (“All”) curve.</span>
+      </div>
+
+      <h3>Columns</h3>
+      <p class="hint">Price columns were auto-detected from the headers — check the assigned
+        price values and fix any that are wrong.</p>
+      <div class="table-scroll" id="mapping-table"></div>
+
+      <h3>Data preview</h3>
+      <div class="table-scroll" id="preview-table"></div>
+
+      <div id="map-warnings" class="warn-list"></div>
+
+      <div class="btn-row">
+        <button id="back-1">← Clean &amp; recode</button>
+        <span class="spacer"></span>
+        <button id="to-results" class="primary">Aggregate &amp; fit →</button>
+      </div>
+    </section>
+
+    <!-- STEP 4: RESULTS -->
+    <section class="step" id="step-4">
+      <h2>Results</h2>
+
+      <div class="controls-box">
+        <div class="controls-head">
+          <span class="controls-title">Settings</span>
+          <span class="saved-note" id="saved-note"></span>
+        </div>
+        <div class="controls-grid">
+          <div class="field">
+            <label for="currency-input">Currency symbol</label>
+            <input type="text" id="currency-input" value="₦" maxlength="6">
+          </div>
+          <div class="field">
+            <label for="k-input">k (span constant)</label>
+            <input type="number" id="k-input" value="2" step="0.1" min="0.1">
+            <span class="note">Applies to every curve. The default of 2 means demand can fall to about 1% of Q₀ at very high prices.</span>
+          </div>
+          <div class="field">
+            <label for="show-groups">Curves shown</label>
+            <select id="show-groups">
+              <option value="all+groups">All + groups</option>
+              <option value="all">All respondents only</option>
+              <option value="groups">Groups only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="zero-mode">Free (price-0) responses</label>
+            <select id="zero-mode">
+              <option value="exclude">Exclude from fit (default)</option>
+              <option value="include">Include as a data point</option>
+              <option value="fix">Fix Q₀ at observed price-0 demand</option>
+            </select>
+            <span class="note">Applies when the data has a free (price-0) condition.</span>
+          </div>
+          <div class="field">
+            <label>Chart reference lines</label>
+            <div class="radio-row">
+              <label class="check-label"><input type="checkbox" id="show-p50-lines" checked> Show P₅₀</label>
+              <label class="check-label"><input type="checkbox" id="show-pmax-lines" checked> Show P<sub>max</sub></label>
+            </div>
+          </div>
+          <div class="field" id="group-toggle-field" style="display:none;">
+            <label>Groups shown</label>
+            <div id="group-toggles" class="filter-values"></div>
+            <span class="note">Hides a group from the charts only — its respondents still count in “All” and the tables.</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="agg-warnings" class="warn-list"></div>
+
+      <div class="result-cards" id="result-cards"></div>
+      <p class="hint" id="params-hint"></p>
+
+      <div id="chart"></div>
+      <div class="btn-row">
+        <button id="dl-png">Download chart PNG</button>
+      </div>
+
+      <details class="advanced" id="revenue-details" style="display:none;">
+        <summary>Show revenue curve (price × predicted demand)</summary>
+        <div class="inner">
+          <p class="hint" id="revenue-hint"></p>
+          <div id="revenue-chart"></div>
+          <div class="btn-row">
+            <button id="dl-revenue-png">Download revenue curve PNG</button>
+          </div>
+        </div>
+      </details>
+
+      <div id="individual-section">
+        <h3>Individual responses</h3>
+        <p class="hint" id="indiv-hint"></p>
+        <div id="raster-wrap"><canvas id="raster"></canvas></div>
+        <div id="bp-dist" style="display:none;"></div>
+        <div class="btn-row">
+          <button id="dl-raster">Download raster PNG</button>
+          <button id="dl-dist" style="display:none;">Download distribution PNG</button>
+        </div>
+      </div>
+
+      <div id="breakpoint-section" style="display:none;">
+        <h3>Individual breakpoints</h3>
+        <p class="hint">
+          Per-respondent breakpoints for yes/no data: patterns with more than two
+          No→Yes reversals across ascending prices are classified as
+          nonsystematic and excluded; for eligible respondents the breakpoint is
+          the geometric mean of the last “Yes” price and the first “No” price
+          that follows it. See <a href="methods.html">Methods</a>.
+        </p>
+        <div class="table-scroll" id="breakpoint-table"></div>
+        <div class="btn-row">
+          <button id="dl-breakpoints">Download individual breakpoints CSV</button>
+        </div>
+      </div>
+
+      <h3>Aggregated data</h3>
+      <p class="hint">The aggregated values the curves are fitted to, at each price.</p>
+      <div class="table-scroll" id="agg-table"></div>
+
+      <div class="btn-row">
+        <button id="back-2">← Back to mapping</button>
+        <button id="dl-agg">Download aggregated CSV</button>
+        <button id="dl-results">Download parameters CSV</button>
+        <span class="spacer"></span>
+        <button id="start-over" class="quiet">Start over (clears saved session)</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Demand Curve Analyzer &middot; a project of
+      <a href="https://promiselabs.africa/" target="_blank" rel="noopener">PROMISE Labs Africa</a>
+      &middot; maintained by Promise Tewogbola &middot; your data is processed in your browser and never uploaded
+      &middot; <a href="https://givebutter.com/9jm8ui" target="_blank" rel="noopener">Donate</a></p>
+  </div>
+</footer>
+
+<script src="assets/js/vendor/papaparse.min.js?v=1.1"></script>
+<script src="assets/js/vendor/xlsx.full.min.js?v=1.1"></script>
+<script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
+<script src="assets/js/model.js?v=3.0"></script>
+<script src="assets/js/sample.js?v=1.1"></script>
+<script src="assets/js/app.js?v=3.6"></script>
+<script src="assets/js/nav.js?v=1.5"></script>
+</body>
+</html>
