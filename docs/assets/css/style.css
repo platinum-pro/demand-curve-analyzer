@@ -243,6 +243,7 @@ details.advanced .inner { padding: 10px 0 0 6px; }
 .site-footer a { color: var(--accent); }
 
 h3 { font-size: 1.05rem; margin: 22px 0 6px; }
+section.step h3 { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 24px; }
 
 /* Org card (shared with HPT Resource Index) */
 .org-card {
