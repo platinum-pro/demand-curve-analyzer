@@ -56,22 +56,32 @@ p_max <- function(alpha, Qo, k) {
 # Area under the curve: a model-free summary of overall demand intensity,
 # computed from the raw aggregated (x, y) pairs -- never the fitted curve.
 # Adapts Myerson, Green, & Warusawitharana's (2001) trapezoidal AUC method
-# to price data: demand (y) is normalized to its own maximum, as in the
+# to price data the way Borges, Kuang, Milhorn, & Yi (2016) adapted it for
+# delay discounting: demand (y) is normalized to its own maximum, as in the
 # original method, but price (x) is normalized on a LOG10 scale (min-max
 # between the lowest and highest price tested) rather than linearly -- HPT
 # price grids are conventionally log-spaced, and linear normalization lets
-# the (usually enormous) gap between the two highest prices dominate the
-# total area. A price-0 point cannot be log-transformed and is always
-# excluded -- a fixed property of the method, not a per-dataset condition.
-# Bounded [0, 1]. NA if fewer than 2 valid positive-price points, or all
-# prices are equal.
+# the gap between the two highest prices dominate the total area (Borges et
+# al.'s own example: two adjacent delays contributed 80% and 0.01% of total
+# AUC under linear scaling). A price-0 point cannot be log-transformed
+# directly; rather than Borges et al.'s fixed "+1" offset (which assumes a
+# fixed, study-invariant unit like a day -- not true of price, which can be
+# in any currency or scale), a tested price-0 point is instead placed at a
+# pseudo-position one decade below the lowest positive price -- the same
+# convention used to plot price-0 on the site's chart -- so it is included
+# rather than dropped. Bounded [0, 1]. NA if fewer than 2 valid points, or
+# no positive price is present to anchor the log scale.
 auc_index <- function(x, y) {
-  keep <- is.finite(x) & x > 0 & is.finite(y)
+  keep <- is.finite(x) & x >= 0 & is.finite(y)
   x <- x[keep]; y <- y[keep]
   if (length(x) < 2) return(NA)
   ord <- order(x)
   x <- x[ord]; y <- y[ord]
-  lx <- log10(x)
+  pos <- x[x > 0]
+  if (!length(pos)) return(NA)
+  pseudo_x <- min(pos) / 10
+  xs <- ifelse(x > 0, x, pseudo_x)
+  lx <- log10(xs)
   lx_min <- lx[1]; lx_max <- lx[length(lx)]
   y_max <- max(y)
   if (!(lx_max > lx_min) || !(y_max > 0)) return(NA)

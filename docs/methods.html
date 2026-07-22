@@ -95,18 +95,24 @@
         successful model fit at all — it is computed directly from the
         <em>aggregated data</em>. Demand is normalized to its own maximum,
         as in the original method; price is normalized on a
-        <strong>log<sub>10</sub> scale</strong> instead of linearly (a
-        deliberate departure from Myerson et al.), since HPT price grids are
-        conventionally log-spaced — normalizing price linearly would let the
-        gap between the two highest prices dominate the entire area,
-        drowning out demand behavior at every price a respondent would
-        plausibly pay. The area under the resulting curve is found by the
+        <strong>log<sub>10</sub> scale</strong> instead of linearly, following
+        Borges, Kuang, Milhorn, &amp; Yi (2016), who showed that on
+        pseudoexponentially-scaled data — where intervals between tested
+        points grow larger as they get larger, as is conventional for both
+        delay-discounting and HPT price grids — linear normalization lets
+        the gap between the two highest values dominate the entire area,
+        drowning out behavior at every value actually experienced by most
+        respondents. The area under the resulting curve is found by the
         trapezoidal rule and is bounded between 0 (demand collapses
         immediately as price rises off the floor) and 1 (demand stays at its
-        maximum across the whole tested range). Because price 0 cannot be
-        log-transformed, a free (price-0) condition, if tested, is never
-        part of this calculation — AUC always covers the tested
-        positive-price range only.</dd>
+        maximum across the whole tested range). Price 0 cannot be
+        log-transformed directly: rather than the fixed offset Borges et al.
+        add before transforming delay (a reasonable choice when the unit is
+        always one day, which does not hold for price in arbitrary
+        currencies or scales), a tested price-0 condition is placed at the
+        same pseudo-position used to plot it on the main chart — one decade
+        below the lowest positive price — so it is included in AUC rather
+        than dropped.</dd>
       <dt><em>P</em><sub>50</sub></dt>
       <dd>The price at which 50% of respondents still purchase (for quantity
         data, the price at which demand falls to half of fitted
@@ -234,6 +240,13 @@
     </p>
 
     <h2>References</h2>
+    <p class="reference">
+      Borges, A. M., Kuang, J., Milhorn, H., &amp; Yi, R. (2016). An
+      alternative approach to calculating area-under-the-curve (AUC) in
+      delay discounting research. <em>Journal of the Experimental
+      Analysis of Behavior</em>, 1–11.
+      <a href="https://doi.org/10.1002/jeab.219" target="_blank" rel="noopener">https://doi.org/10.1002/jeab.219</a>
+    </p>
     <p class="reference">
       Gilroy, S. P., Kaplan, B. A., Reed, D. D., Hantula, D. A., &amp; Hursh,
       S. R. (2019). An exact solution for unit elasticity in the exponential

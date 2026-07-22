@@ -777,7 +777,7 @@
     var hint = mode === "binary"
       ? "Oₘₐₓ and Pₘₐₓ are the expected revenue per person offered, and the price it peaks at, if the product were priced to maximize revenue — meaningful when price in your study represents a real payment or fee."
       : "Oₘₐₓ and Pₘₐₓ are the peak spending per person, and the price it peaks at — meaningful when price in your study represents a real payment or fee.";
-    hint += " AUC is computed directly from the aggregated data, not the fitted curve, so it's unaffected by fit quality — closer to 1 means demand stayed high across the whole price range tested, closer to 0 means it fell off quickly. It covers the tested positive prices only; a free (price-0) condition, if tested, isn't part of this calculation.";
+    hint += " AUC is computed directly from the aggregated data, not the fitted curve, so it's unaffected by fit quality — closer to 1 means demand stayed high across the whole price range tested, closer to 0 means it fell off quickly.";
     $("params-hint").textContent = hint;
   }
 
