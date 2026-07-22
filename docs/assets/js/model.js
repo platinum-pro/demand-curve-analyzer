@@ -233,5 +233,38 @@
     return -w / (alpha * Q0);
   }
 
-  return { koff: koff, fit: fit, pAtTarget: pAtTarget, pmax: pmax, lambertW0: lambertW0, rssOf: rssOf };
+  /* Area under the curve: a model-free summary of overall demand intensity,
+     computed directly from the aggregated data (never the fitted curve).
+     Adapts Myerson, Green, & Warusawitharana's (2001) trapezoidal AUC
+     method to price data: demand (y) is normalized to its own maximum, as
+     in the original method, but price (x) is normalized on a LOG10 scale
+     (min-max between the lowest and highest price tested) rather than
+     linearly — HPT price grids are conventionally log-spaced, and linear
+     normalization lets the (usually enormous) gap between the two highest
+     prices dominate the total area, drowning out demand behavior at every
+     price a respondent would plausibly pay. A price-0 point cannot be
+     log-transformed and is always excluded — this is a fixed property of
+     the method, not a per-dataset condition. Bounded [0, 1]. Returns NaN if
+     fewer than 2 valid positive-price points, or if all prices are equal. */
+  function auc(points) {
+    var pts = points.filter(function (p) {
+      return isFinite(p.x) && p.x > 0 && isFinite(p.y);
+    });
+    if (pts.length < 2) return NaN;
+    pts = pts.slice().sort(function (a, b) { return a.x - b.x; });
+    var lxMin = Math.log10(pts[0].x), lxMax = Math.log10(pts[pts.length - 1].x);
+    var yMax = -Infinity;
+    for (var i = 0; i < pts.length; i++) if (pts[i].y > yMax) yMax = pts[i].y;
+    if (!(lxMax > lxMin) || !(yMax > 0)) return NaN;
+    var area = 0;
+    for (var j = 0; j < pts.length - 1; j++) {
+      var x1 = (Math.log10(pts[j].x) - lxMin) / (lxMax - lxMin);
+      var x2 = (Math.log10(pts[j + 1].x) - lxMin) / (lxMax - lxMin);
+      var y1 = pts[j].y / yMax, y2 = pts[j + 1].y / yMax;
+      area += (x2 - x1) * (y1 + y2) / 2;
+    }
+    return area;
+  }
+
+  return { koff: koff, fit: fit, pAtTarget: pAtTarget, pmax: pmax, lambertW0: lambertW0, rssOf: rssOf, auc: auc };
 });

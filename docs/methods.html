@@ -88,6 +88,25 @@
 
     <h3 class="param-group">Derived indices</h3>
     <dl class="param-list">
+      <dt>AUC</dt>
+      <dd>A model-free summary of overall demand intensity across the tested
+        price range, adapting the trapezoidal method of Myerson, Green,
+        &amp; Warusawitharana (2001). Unlike the indices below, it needs no
+        successful model fit at all — it is computed directly from the
+        <em>aggregated data</em>. Demand is normalized to its own maximum,
+        as in the original method; price is normalized on a
+        <strong>log<sub>10</sub> scale</strong> instead of linearly (a
+        deliberate departure from Myerson et al.), since HPT price grids are
+        conventionally log-spaced — normalizing price linearly would let the
+        gap between the two highest prices dominate the entire area,
+        drowning out demand behavior at every price a respondent would
+        plausibly pay. The area under the resulting curve is found by the
+        trapezoidal rule and is bounded between 0 (demand collapses
+        immediately as price rises off the floor) and 1 (demand stays at its
+        maximum across the whole tested range). Because price 0 cannot be
+        log-transformed, a free (price-0) condition, if tested, is never
+        part of this calculation — AUC always covers the tested
+        positive-price range only.</dd>
       <dt><em>P</em><sub>50</sub></dt>
       <dd>The price at which 50% of respondents still purchase (for quantity
         data, the price at which demand falls to half of fitted
@@ -235,6 +254,12 @@
       consumption data. <em>Experimental and Clinical Psychopharmacology,
       23</em>(6), 504–512.
       <a href="https://doi.org/10.1037/pha0000045" target="_blank" rel="noopener">https://doi.org/10.1037/pha0000045</a>
+    </p>
+    <p class="reference">
+      Myerson, J., Green, L., &amp; Warusawitharana, M. (2001). Area under the
+      curve as a measure of discounting. <em>Journal of the Experimental
+      Analysis of Behavior, 76</em>(2), 235–243.
+      <a href="https://doi.org/10.1901/jeab.2001.76-235" target="_blank" rel="noopener">https://doi.org/10.1901/jeab.2001.76-235</a>
     </p>
     <p class="reference">
       Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., &amp;

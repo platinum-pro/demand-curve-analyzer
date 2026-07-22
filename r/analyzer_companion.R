@@ -53,6 +53,32 @@ p_max <- function(alpha, Qo, k) {
   -w / (alpha * Qo)
 }
 
+# Area under the curve: a model-free summary of overall demand intensity,
+# computed from the raw aggregated (x, y) pairs -- never the fitted curve.
+# Adapts Myerson, Green, & Warusawitharana's (2001) trapezoidal AUC method
+# to price data: demand (y) is normalized to its own maximum, as in the
+# original method, but price (x) is normalized on a LOG10 scale (min-max
+# between the lowest and highest price tested) rather than linearly -- HPT
+# price grids are conventionally log-spaced, and linear normalization lets
+# the (usually enormous) gap between the two highest prices dominate the
+# total area. A price-0 point cannot be log-transformed and is always
+# excluded -- a fixed property of the method, not a per-dataset condition.
+# Bounded [0, 1]. NA if fewer than 2 valid positive-price points, or all
+# prices are equal.
+auc_index <- function(x, y) {
+  keep <- is.finite(x) & x > 0 & is.finite(y)
+  x <- x[keep]; y <- y[keep]
+  if (length(x) < 2) return(NA)
+  ord <- order(x)
+  x <- x[ord]; y <- y[ord]
+  lx <- log10(x)
+  lx_min <- lx[1]; lx_max <- lx[length(lx)]
+  y_max <- max(y)
+  if (!(lx_max > lx_min) || !(y_max > 0)) return(NA)
+  xn <- (lx - lx_min) / (lx_max - lx_min); yn <- y / y_max
+  sum(diff(xn) * (head(yn, -1) + tail(yn, -1)) / 2)
+}
+
 # ---------------- Data loading ----------------
 data <- read.csv(input_file, check.names = FALSE, fileEncoding = "UTF-8")
 
@@ -108,6 +134,11 @@ fit_series <- function(agg_col) {
   zero <- d[d$x == 0, ]
   observed0 <- if (nrow(zero)) mean(zero$All) else NA
 
+  # AUC is independent of the fit and of zero_mode -- always computed from
+  # the full aggregated series `d` (auc_index itself excludes any price-0
+  # point, since log10(0) is undefined).
+  auc <- auc_index(d$x, d$All)
+
   max_y <- max(d$All)
   upper <- if (response_mode == "binary") c(alpha = 0.1, Qo = 100)
            else c(alpha = 1, Qo = max(10, max_y * 5))
@@ -160,7 +191,7 @@ fit_series <- function(agg_col) {
 
   list(alpha = alpha, Qo = Qo, k = k_global, q0_source = q0_source,
        r_squared = r2, p50 = p50, p50_in_range = p50_in_range,
-       pmax = pmax, omax = omax,
+       pmax = pmax, omax = omax, auc = auc,
        n_points = nrow(fit_data))
 }
 
@@ -171,7 +202,8 @@ params <- do.call(rbind, lapply(fits, function(f) {
   data.frame(series = f$series, n = f$n, points = f$n_points,
              Q0 = f$Qo, q0_source = f$q0_source, alpha = f$alpha, k = f$k,
              p50 = f$p50, p50_within_observed_range = f$p50_in_range,
-             pmax = f$pmax, omax = f$omax, r_squared = f$r_squared)
+             pmax = f$pmax, omax = f$omax, r_squared = f$r_squared,
+             auc = f$auc)
 }))
 
 # ---------------- Individual breakpoints (binary data only) ----------------

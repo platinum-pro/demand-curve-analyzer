@@ -359,11 +359,17 @@
           omaxVal = pm * (mode === "binary" ? qAtPmax / 100 : qAtPmax);
         }
       }
+      // AUC: computed from the raw aggregated points (log-price adaptation
+      // of Myerson et al., 2001 — see model.js), independent of the fit and
+      // always excluding any price-0 point — reported even when the fit
+      // itself fails.
+      var aucVal = DCAModel.auc(pts);
       return {
         name: def.name, color: def.color, n: def.rowIdxs.length,
         rowIdxs: def.rowIdxs,
         points: pts, nFitted: fitPts.length, observed0: observed0,
-        fit: fit, p50: p50, p50InRange: p50InRange, pmax: pmaxVal, omax: omaxVal
+        fit: fit, p50: p50, p50InRange: p50InRange, pmax: pmaxVal, omax: omaxVal,
+        auc: isFinite(aucVal) ? aucVal : null
       };
     });
 
@@ -748,12 +754,15 @@
       html += "<div class='card'>" +
         "<div class='label'><span class='swatch' style='background:" + s.color + "'></span>" +
         esc(s.name) + " · n=" + s.n + "</div>";
+      var aucStat = "<div class='stat'>AUC = " + fmtNum(s.auc, 3) + "</div>";
       if (f.error) {
-        html += "<div class='value'>fit failed</div><div class='sub'>" + esc(f.error) + "</div>";
+        html += "<div class='value'>fit failed</div><div class='sub'>" + esc(f.error) + "</div>" +
+          "<div class='stats'>" + aucStat + "</div>";
       } else {
         html += "<div class='value'>" + p50Name + " = " + p50Label(s) + "</div>" +
           "<div class='stats'>" +
           "<div class='stat'>Q₀ = " + fmtNum(f.Q0, 1) + (f.q0Fixed ? " (fixed)" : "") + "</div>" +
+          aucStat +
           "<div class='stat'>α = " + fmtAlpha(f.alpha) + "</div>" +
           "<div class='stat'>P<sub>max</sub> = " + fmtPrice(s.pmax) + "</div>" +
           "<div class='stat'>O<sub>max</sub> = " + fmtPrice(s.omax) +
@@ -765,9 +774,11 @@
       html += "</div>";
     });
     $("result-cards").innerHTML = html;
-    $("params-hint").textContent = mode === "binary"
+    var hint = mode === "binary"
       ? "Oₘₐₓ and Pₘₐₓ are the expected revenue per person offered, and the price it peaks at, if the product were priced to maximize revenue — meaningful when price in your study represents a real payment or fee."
       : "Oₘₐₓ and Pₘₐₓ are the peak spending per person, and the price it peaks at — meaningful when price in your study represents a real payment or fee.";
+    hint += " AUC is computed directly from the aggregated data, not the fitted curve, so it's unaffected by fit quality — closer to 1 means demand stayed high across the whole price range tested, closer to 0 means it fell off quickly. It covers the tested positive prices only; a free (price-0) condition, if tested, isn't part of this calculation.";
+    $("params-hint").textContent = hint;
   }
 
   function renderChart() {
@@ -1544,7 +1555,7 @@
 
   function downloadResults() {
     if (!results || results.error) return;
-    var lines = ["series,n,points,Q0,q0_source,alpha,k," + (results.mode === "binary" ? "p50" : "price_at_half_Q0") + ",p50_within_observed_range,pmax," + (results.mode === "binary" ? "omax_revenue_per_person" : "omax") + ",r_squared"];
+    var lines = ["series,n,points,Q0,q0_source,alpha,k," + (results.mode === "binary" ? "p50" : "price_at_half_Q0") + ",p50_within_observed_range,pmax," + (results.mode === "binary" ? "omax_revenue_per_person" : "omax") + ",r_squared,auc"];
     results.series.forEach(function (s) {
       var f = s.fit;
       lines.push([
@@ -1557,7 +1568,8 @@
         s.p50 != null ? String(!!s.p50InRange) : "",
         s.pmax != null ? s.pmax.toFixed(4) : "",
         s.omax != null ? s.omax.toFixed(4) : "",
-        f.error ? "" : f.rSquared.toFixed(6)
+        f.error ? "" : f.rSquared.toFixed(6),
+        s.auc != null ? s.auc.toFixed(6) : ""
       ].join(","));
     });
     downloadText(baseName() + "_parameters.csv", lines.join("\n") + "\n");
