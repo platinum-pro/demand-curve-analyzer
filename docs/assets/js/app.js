@@ -1041,12 +1041,18 @@
   }
 
   function rasterBlocks() {
-    // one block per group when grouping is active, otherwise the full sample;
-    // groups hidden via the "Groups shown" toggle are omitted
+    // One block per group when grouping is active and the "Curves shown"
+    // setting isn't restricted to "All respondents only" -- otherwise a
+    // single block for the full sample. Splitting by group here would
+    // duplicate every respondent (once under "All", again under their
+    // group), so unlike the aggregate chart, "all+groups" mode shows
+    // per-group blocks only, not an "All" block plus group blocks.
+    // Groups hidden via the "Groups shown" toggle are omitted.
     var hidden = state.settings.hiddenGroups || [];
-    var blocks = results.series.length > 1
-      ? results.series.slice(1).filter(function (s) { return hidden.indexOf(s.name) < 0; })
-      : [results.series[0]];
+    if (results.series.length === 1 || state.settings.showGroups === "all") {
+      return [results.series[0]];
+    }
+    var blocks = results.series.slice(1).filter(function (s) { return hidden.indexOf(s.name) < 0; });
     return blocks.length ? blocks : [results.series[0]];
   }
 
