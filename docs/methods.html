@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Methods · Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="How the Demand Curve Analyzer aggregates survey data and fits the exponentiated demand model (Koffarnus et al., 2015).">
-<link rel="stylesheet" href="assets/css/style.css?v=2.1">
+<link rel="stylesheet" href="assets/css/style.css?v=2.2">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -44,10 +44,10 @@
       aggregates each price column into a single demand value:
     </p>
     <ul>
-      <li><strong>Yes/no purchase responses</strong> — the percentage of
+      <li><strong>Yes/no purchase responses</strong>: the percentage of
         respondents who would purchase at that price (respondents with missing
         or uninterpretable cells are excluded from that price's denominator).</li>
-      <li><strong>Quantities</strong> — the mean number of units respondents
+      <li><strong>Quantities</strong>: the mean number of units respondents
         report they would purchase at that price.</li>
     </ul>
     <p>
@@ -58,9 +58,11 @@
 
     <h2>The demand model</h2>
     <p>
-      Aggregated demand is fitted with the exponentiated demand model of
-      Koffarnus, Franck, Stein &amp; Bickel (2015), where <em>Q</em> is
-      predicted demand (% purchasing, or mean units) at price <em>P</em>:
+      Once your data is aggregated, the analyzer fits a curve through it: a
+      mathematical description of how demand falls as price rises. It uses a
+      well-established model from behavioral economics research (Koffarnus,
+      Franck, Stein &amp; Bickel, 2015). You don't need to follow the
+      equation to use the results below; it's shown here for reference.
     </p>
     <div class="equation">
       <em>Q</em> = <em>Q</em><sub>0</sub> · 10<sup><em>k</em>(<em>e</em><sup>−<em>αQ</em><sub>0</sub><em>P</em></sup> − 1)</sup>
@@ -69,119 +71,84 @@
     <h3 class="param-group">Model parameters</h3>
     <dl class="param-list">
       <dt><em>Q</em><sub>0</sub></dt>
-      <dd>Demand intensity — the level of demand when the product is free or
-        nearly free.</dd>
+      <dd>How much people want the product when it's free or nearly free.</dd>
       <dt><em>α</em> (alpha)</dt>
-      <dd>Rate of change in demand elasticity: larger values mean demand decays
-        faster as price rises.</dd>
+      <dd>How fast demand drops off as price increases. A bigger
+        <em>α</em> means people stop buying much sooner as price rises; a
+        smaller <em>α</em> means demand holds up longer before falling
+        away.</dd>
       <dt><em>k</em></dt>
-      <dd><em>k</em> sets how many log<sub>10</sub> units the curve spans,
-        from its value at low prices down to its floor at high prices. It is
-        held fixed at one value across all curves — rather than estimated
-        separately for each — so that differences in the fitted <em>α</em>
-        reflect real differences in demand, not an arbitrary split between
-        the two parameters. The default of 2 is a reasonable starting point
-        for percentage-scale data — demand asymptotes to about 1% of
-        <em>Q</em><sub>0</sub> — and can be changed in the results settings
-        to suit your own data.</dd>
+      <dd>How far demand is allowed to fall at the very highest prices. With
+        the default setting, demand never quite hits zero: it levels off at
+        about 1% of where it started. <em>k</em> is set to the same value
+        for every curve in your analysis, rather than letting the software
+        pick a different value per group, so that if two groups look
+        different, it's because their actual buying behavior differs, not
+        because the math found two different-looking ways to draw a similar
+        curve. Most people won't need to change this.</dd>
     </dl>
 
     <h3 class="param-group">Derived indices</h3>
     <dl class="param-list">
       <dt>AUC</dt>
-      <dd>A model-free summary of overall demand intensity across the tested
-        price range, adapting the trapezoidal method of Myerson, Green,
-        &amp; Warusawitharana (2001). Unlike the indices below, it needs no
-        successful model fit at all — it is computed directly from the
-        <em>aggregated data</em>. Demand is normalized to its own maximum,
-        as in the original method; price is normalized on a
-        <strong>log<sub>10</sub> scale</strong> instead of linearly, following
-        Borges, Kuang, Milhorn, &amp; Yi (2016), who showed that on
-        pseudoexponentially-scaled data — where intervals between tested
-        points grow larger as they get larger, as is conventional for both
-        delay-discounting and HPT price grids — linear normalization lets
-        the gap between the two highest values dominate the entire area,
-        drowning out behavior at every value actually experienced by most
-        respondents. The area under the resulting curve is found by the
-        trapezoidal rule and is bounded between 0 (demand collapses
-        immediately as price rises off the floor) and 1 (demand stays at its
-        maximum across the whole tested range). Price 0 cannot be
-        log-transformed directly: rather than the fixed offset Borges et al.
-        add before transforming delay (a reasonable choice when the unit is
-        always one day, which does not hold for price in arbitrary
-        currencies or scales), a tested price-0 condition is placed at the
-        same pseudo-position used to plot it on the main chart — one decade
-        below the lowest positive price — so it is included in AUC rather
-        than dropped.</dd>
+      <dd>A single number summarizing overall demand across every price you
+        tested, calculated straight from your data rather than the curve
+        above. It ranges from 0 to 1: closer to 1 means demand stayed strong
+        across the whole price range tested; closer to 0 means it dropped
+        off quickly. Because it doesn't depend on the curve fitting well,
+        it's a useful second opinion, especially if a fit looks shaky.</dd>
       <dt><em>P</em><sub>50</sub></dt>
-      <dd>The price at which 50% of respondents still purchase (for quantity
-        data, the price at which demand falls to half of fitted
-        <em>Q</em><sub>0</sub>), obtained by solving the fitted model for
-        price. It is not reported when the fitted curve never crosses that
-        level, and is flagged as <em>extrapolated</em> when it falls outside
-        the range of prices presented to respondents.</dd>
+      <dd>The price at which half of your respondents would still buy (or,
+        for quantity data, where demand has dropped to half its starting
+        level). If the curve never reaches that point within the prices you
+        actually tested, the analyzer says so rather than guessing beyond
+        your data.</dd>
       <dt><em>P</em><sub>max</sub></dt>
-      <dd>The price at which demand transitions from inelastic to elastic —
-        below <em>P</em><sub>max</sub>, total spending rises as price rises;
-        above it, spending falls. It is calculated exactly as the price where
-        the slope of the demand curve equals −1 in log–log terms, using the
-        Lambert W function (Gilroy et al., 2019):
-        <em>P</em><sub>max</sub> = −W<sub>0</sub>(−1/(<em>k</em>·ln&nbsp;10)) / (<em>αQ</em><sub>0</sub>).
-        When <em>k</em> is set below ≈ 1.18, demand never reaches unit
-        elasticity and <em>P</em><sub>max</sub> is not reported.</dd>
+      <dd>The exact price at which the revenue chart (further down the page)
+        reaches its peak. That's not an approximation; it's the same point,
+        by definition. Push the price higher past this point and the drop
+        in how many people still say yes outweighs the higher price, so the
+        total per person starts to fall. Below <em>P</em><sub>max</sub>, the
+        opposite is true: raising the price still increases the total, even
+        though fewer people say yes.</dd>
       <dt><em>O</em><sub>max</sub></dt>
-      <dd>The value of demand at <em>P</em><sub>max</sub> (price ×
-        predicted demand at that price). For yes/no data this is the
-        <strong>expected revenue per person</strong> offered the product at
-        <em>P</em><sub>max</sub>, since demand there is a purchase rate, not
-        a quantity; for quantity data it is the conventional <strong>peak
-        spending per person</strong>.</dd>
+      <dd>How much money would be made per person at that peak price. For
+        yes/no data: price × the share of people who'd still buy. For
+        quantity data: price × predicted quantity.</dd>
     </dl>
     <p>
-      For yes/no data, <em>Q</em> is a percentage (0–100), the same scale
-      shown on the main chart's y-axis — so before it can be multiplied by a
-      price it is first converted to a probability by dividing by 100:
-      revenue at price <em>P</em> = <em>P</em> · <em>Q</em>(<em>P</em>)/100.
-      Multiplying by the raw percentage number instead would give a total
-      across however many people that percentage happens to be “out of,”
-      rather than an unambiguous per-person figure — dividing by 100 first is
-      what lets the result scale cleanly to any group size (for example,
-      multiplying by 10,000 to project revenue for a target population of
-      that size).
+      One detail if you're checking the math: a percentage like 40% needs to
+      become the fraction 0.4 before multiplying by price, so the revenue
+      figure comes out per person rather than tied to some unstated group
+      size. The analyzer does this automatically.
     </p>
     <p>
-      <em>P</em><sub>max</sub> and <em>O</em><sub>max</sub> are most useful
-      when price in your study represents an actual payment, fee, or
-      cost-recovery mechanism — for example, setting a sustainable premium or
-      program fee. When price instead stands in for something else, such as
-      the intensity of a preference with no real transaction attached, these
-      two indices don't correspond to a decision anyone would act on, and can
-      be disregarded.
+      <em>P</em><sub>max</sub> and <em>O</em><sub>max</sub> only mean
+      something when price in your study is a real payment, fee, or cost.
+      If price instead stands for something else, like how strongly someone
+      prefers an option with no real money involved, these two numbers
+      don't correspond to a decision anyone would act on, and can be
+      ignored.
     </p>
     <p>
-      A revenue curve (price × predicted demand) is available directly below
-      the main chart when <em>P</em><sub>max</sub> is reported.
-      Because the model's demand never falls all the way to zero — it
-      flattens out at a floor near 1% of <em>Q</em><sub>0</sub>, controlled by
-      <em>k</em> — plotting revenue across a very wide price range can make it
-      appear to rise again at extreme prices, purely because a small constant
-      floor of demand is being multiplied by an ever-larger price. To avoid
-      showing this artifact as if it were real, the curve stops once predicted
-      demand falls below 3% of <em>Q</em><sub>0</sub>, and never extends past
-      the highest price actually tested.
+      A revenue chart (price × predicted demand) is available below the main
+      chart whenever <em>P</em><sub>max</sub> is reported. One quirk worth
+      knowing: because demand in this model never quite reaches zero,
+      plotting revenue across a very wide price range can make it look like
+      revenue rises again at extreme prices. That's not real, though: it's
+      just a side effect of multiplying a tiny-but-nonzero demand by a huge
+      price. To avoid showing that misleading picture, the chart stops once
+      predicted demand drops below 3% of its starting level, and never goes
+      past the highest price you actually tested.
     </p>
 
     <h3 class="param-group">Fit diagnostic</h3>
     <dl class="param-list">
       <dt>R²</dt>
-      <dd>How well the fitted curve describes your data — the proportion of the
-        variability in the aggregated demand values that the curve accounts
-        for. It is computed as 1 − RSS/TSS, where RSS (the residual sum of
-        squares) measures how far the data points fall from the fitted curve,
-        and TSS (the total sum of squares) measures how spread out the data
-        points are overall. Values closer to 1 mean the curve fits the data
-        more closely, while values near zero mean it fits poorly; demand
-        studies commonly report values above 0.9 for aggregate data.</dd>
+      <dd>A score from 0 to 1 for how well the curve matches your data.
+        Closer to 1 means a tighter fit. Most published demand-curve studies
+        see values above 0.9 for aggregated data; much lower is worth a
+        second look.</dd>
     </dl>
 
     <h2>Fitting procedure</h2>
@@ -206,30 +173,28 @@
 
     <h2>Individual breakpoints (yes/no data)</h2>
     <p>
-      For binary purchase data, the analyzer also derives an individual
-      breakpoint for each respondent — the price at which willingness to
-      purchase transitions from “Yes” to “No.”
+      For yes/no data, the analyzer also works out a breakpoint for each
+      respondent: the price where they switch from “yes, I'd buy this” to
+      “no, I wouldn't.”
     </p>
     <p>
-      Because binary responses do not support the full set of nonsystematic-data
-      criteria proposed by Stein et al. (2015), including rules based on bounces
-      and reversals from zero, an adapted reversal-based criterion is used:
-      a response pattern is classified as <strong>systematic</strong> when it
-      contains no more than two reversals, defined as adjacent transitions from
-      “No” to “Yes” across the ascending price sequence — that is, endorsement
-      of purchase at a higher price after rejection at a lower price.
-      Respondents whose patterns exceed this threshold are excluded from
-      breakpoint analyses.
+      Real respondents don't always answer with perfect consistency. Someone
+      might say yes at a low price, no at a slightly higher one, then yes
+      again, sometimes just from a lapse in attention. So before calculating
+      anyone's breakpoint, the analyzer checks how consistent their answers
+      were: if someone flips from “no” back to “yes” more than twice as
+      price increases, their pattern is treated as too inconsistent to give
+      a meaningful breakpoint, and they're set aside (adapted from Stein et
+      al., 2015).
     </p>
     <p>
-      For eligible respondents, the breakpoint marks the terminal transition to
-      rejection: it is calculated as the <strong>geometric mean of the last
-      “Yes” price and the first “No” price that follows it</strong>. An
-      isolated earlier “No” — the kind of lapse the reversal criterion
-      tolerates — does not define the breakpoint. Respondents who endorse
-      purchase at every price (including any who return to “Yes” at the highest
-      price), or at none, have no computable breakpoint and are counted
-      separately in the summary table.
+      For everyone else, the breakpoint is the geometric mean of the last
+      price they said yes to and the first higher price they said no to: a
+      kind of middle point that's better suited to prices than a plain
+      average, since it doesn't get pulled up by the higher of the two
+      numbers the way an ordinary average would. Respondents who said yes at
+      every price, or no at every price, don't have a breakpoint and are
+      counted separately.
     </p>
 
     <h2>Privacy</h2>

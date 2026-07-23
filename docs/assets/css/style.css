@@ -124,6 +124,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 button.primary:hover { background: #234c73; color: #fff; }
 button.quiet { border-color: transparent; color: var(--muted); }
 button.quiet:hover { color: var(--accent); }
+button.quiet .link-text { color: var(--accent); text-decoration: underline; }
+button.quiet:hover .link-text { color: #234c73; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-row { display: flex; gap: 10px; margin: 18px 0; flex-wrap: wrap; align-items: center; }
