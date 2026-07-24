@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demand Curve Analyzer — PROMISE Labs Africa</title>
-<meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015) — entirely in your browser.">
+<meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015), entirely in your browser.">
 <link rel="stylesheet" href="assets/css/style.css?v=2.3">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
@@ -34,7 +34,7 @@
     <p class="lede">
       Upload hypothetical purchase task (HPT) survey data in wide format, aggregate
       responses at each price, and fit the exponentiated demand model
-      (Koffarnus et&nbsp;al., 2015) — overall and by group. Everything runs in your
+      (Koffarnus et&nbsp;al., 2015), overall and by group. Everything runs in your
       browser: your data never leaves your computer, and your session is saved
       locally so you can pick up where you stopped.
     </p>
@@ -61,13 +61,13 @@
         Wide format: one row per respondent, one column per price point. Cells hold
         either a yes/no purchase response (e.g. <code>1</code>/<code>0</code>,
         <code>Yes</code>/<code>No</code>) or a quantity the respondent would buy.
-        Extra columns (ID, sex, site, condition…) are fine — you can use one for
+        Extra columns (ID, sex, site, condition…) are fine; you can use one for
         group comparisons. CSV or Excel (.xlsx).
       </p>
       <div class="dropzone" id="dropzone" tabindex="0" role="button"
            aria-label="Upload a CSV or Excel file">
         <strong>Drop a CSV or Excel file here</strong> or click to browse
-        <div class="sub">Nothing is uploaded to any server — parsing happens in your browser.</div>
+        <div class="sub">Nothing is uploaded to any server: parsing happens in your browser.</div>
       </div>
       <input type="file" id="file-input" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none;">
       <div class="btn-row">
@@ -81,14 +81,14 @@
       <h2>Clean &amp; recode <span class="note" style="font-weight:400;">(optional)</span></h2>
       <p class="hint">
         Build new grouping variables or exclude rows. Your uploaded values are never
-        modified — your recodes are applied on top of them and saved with your session.
+        modified: your recodes are applied on top of them and saved with your session.
         Blank cells in price columns are already treated as missing automatically.
       </p>
 
       <h3>New grouping variable</h3>
       <p class="hint">
-        Create a new column by recoding an existing one — collapse categories
-        (sites → regions) or bin numbers into ranges (age → age groups). The
+        Create a new column by recoding an existing one: collapse categories
+        (sites into regions) or bin numbers into ranges (age into age groups). The
         original column is kept; the new one appears as a grouping option in the
         next step.
       </p>
@@ -151,7 +151,7 @@
       </div>
 
       <h3>Columns</h3>
-      <p class="hint">Price columns were auto-detected from the headers — check the assigned
+      <p class="hint">Price columns were auto-detected from the headers; check the assigned
         price values and fix any that are wrong.</p>
       <div class="table-scroll" id="mapping-table"></div>
 
@@ -213,7 +213,7 @@
           <div class="field" id="group-toggle-field" style="display:none;">
             <label>Groups shown</label>
             <div id="group-toggles" class="filter-values"></div>
-            <span class="note">Hides a group from the charts only — its respondents still count in “All” and the tables.</span>
+            <span class="note">Hides a group from the charts only; its respondents still count in “All” and the tables.</span>
           </div>
         </div>
       </div>
@@ -229,7 +229,7 @@
       </div>
 
       <details class="advanced" id="revenue-details" style="display:none;">
-        <summary>Show revenue curve (price × predicted demand)</summary>
+        <summary>Show revenue curve</summary>
         <div class="inner">
           <p class="hint" id="revenue-hint"></p>
           <div id="revenue-chart"></div>
@@ -254,7 +254,7 @@
         <h3>Individual breakpoints</h3>
         <p class="hint">
           Per-respondent breakpoints for yes/no data: patterns with more than two
-          No→Yes reversals across ascending prices are classified as
+          No-to-Yes reversals across ascending prices are classified as
           nonsystematic and excluded; for eligible respondents the breakpoint is
           the geometric mean of the last “Yes” price and the first “No” price
           that follows it. See <a href="methods.html">Methods</a>.
@@ -295,7 +295,7 @@
 <script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
 <script src="assets/js/model.js?v=3.2"></script>
 <script src="assets/js/sample.js?v=1.1"></script>
-<script src="assets/js/app.js?v=3.9"></script>
+<script src="assets/js/app.js?v=4.0"></script>
 <script src="assets/js/nav.js?v=1.5"></script>
 </body>
 </html>

@@ -933,7 +933,7 @@
     $("revenue-hint").textContent = (mode === "binary"
       ? "Expected revenue per person if the product were priced at each point on the x-axis."
       : "Spending per person at each price.") +
-      " The curve stops once predicted demand falls below 3% of Q₀ — beyond that point too few respondents are driving the estimate to trust it.";
+      " The curve stops once predicted demand falls below 3% of Q₀; beyond that point, estimates are driven by very small predicted demand values and shouldn't be read as meaningful revenue patterns.";
 
     var showLegend = vis.length > 1;
     var traces = [], shapes = [], maxY = 0, drawn = false;
@@ -1031,8 +1031,8 @@
   function renderIndividuals() {
     var mode = results.mode;
     $("indiv-hint").textContent = mode === "binary"
-      ? "Every respondent's raw responses — one row per person, one column per price, sorted by breakpoint. Filled cells are “Yes”; nonsystematic responders appear at the bottom of each block."
-      : "Every respondent's raw responses — one row per person, one column per price, shaded by reported quantity (darker = more), sorted by average quantity.";
+      ? "Every respondent's raw responses: one row per person, one column per price, sorted by breakpoint. Filled cells are “Yes”; nonsystematic responders appear at the bottom of each block."
+      : "Every respondent's raw responses: one row per person, one column per price, shaded by reported quantity (darker = more), sorted by average quantity.";
     drawRaster();
     var showDist = mode === "binary";
     $("bp-dist").style.display = showDist ? "" : "none";
