@@ -51,6 +51,17 @@
     saveTimer = setTimeout(saveState, 300);
   }
 
+  /* The raster is a plain canvas (not Plotly), so unlike the Plotly charts
+     (which redraw themselves via responsive:true) it needs its own resize
+     handling to reflow at the new container width. */
+  var resizeTimer = null;
+  function scheduleRasterResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (results && !results.error) drawRaster();
+    }, 150);
+  }
+
   function saveState() {
     if (!state.fileName) return;
     var payload = {
@@ -1708,6 +1719,7 @@
     $("revenue-details").addEventListener("toggle", function () {
       if (results && !results.error) renderRevenueCurve();
     });
+    window.addEventListener("resize", scheduleRasterResize);
     $("dl-agg").addEventListener("click", downloadAgg);
     $("dl-results").addEventListener("click", downloadResults);
     $("dl-png").addEventListener("click", function () {
