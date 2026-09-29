@@ -76,6 +76,9 @@ main { flex: 1; }
 
 main { padding: 24px 0 32px; }
 
+.hero { margin: 4px 0 24px; }
+.hero h1 { font-size: 2.1rem; margin: 0 0 10px; }
+.hero .lede { margin: 0; }
 .lede { color: var(--muted); max-width: 760px; }
 
 /* Stepper */
@@ -128,10 +131,11 @@ section.step h2 { margin: 8px 0 4px; }
 .dropzone {
   border: 2px dashed var(--line); border-radius: var(--radius);
   padding: 44px 20px; text-align: center; color: var(--muted);
-  background: var(--bg-soft); cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  background: var(--bg-soft); cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
-.dropzone.dragover { border-color: var(--accent); background: #eef4fa; }
+.dropzone.dragover { border-color: var(--accent); background: #e8f5ec; color: var(--accent); }
 .dropzone strong { color: var(--ink); }
+.cloud-icon { display: block; margin: 0 auto 10px; }
 .dropzone .sub { font-size: 0.9rem; margin-top: 6px; }
 
 /* Buttons */
