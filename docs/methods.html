@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Methods · Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="How the Demand Curve Analyzer aggregates survey data and fits the exponentiated demand model (Koffarnus et al., 2015).">
-<link rel="stylesheet" href="assets/css/style.css?v=3.0">
+<link rel="stylesheet" href="assets/css/style.css?v=3.2">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -31,7 +31,20 @@
 </header>
 
 <main class="page-methods">
-  <div class="wrap">
+  <div class="wrap methods-layout">
+    <nav class="toc" aria-label="Table of contents">
+      <strong>On this page</strong>
+      <a href="#data-aggregation">Data &amp; aggregation</a>
+      <a href="#demand-model">The demand model</a>
+      <a href="#model-parameters" class="toc-sub">Model parameters</a>
+      <a href="#derived-indices" class="toc-sub">Derived indices</a>
+      <a href="#fit-diagnostic" class="toc-sub">Fit diagnostic</a>
+      <a href="#fitting-procedure">Fitting procedure</a>
+      <a href="#individual-breakpoints">Individual breakpoints</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#references">References</a>
+    </nav>
+    <div class="methods-body">
     <h1>Methods</h1>
     <p>
       Every dataset goes through the same steps:
@@ -51,7 +64,7 @@
       on the results page back to the step that produced it.
     </p>
 
-    <h2>Data &amp; aggregation</h2>
+    <h2 id="data-aggregation">Data &amp; aggregation</h2>
     <p>
       The analyzer accepts wide-format survey data: one row per respondent, one
       column per price point. Depending on the response format you select, it
@@ -80,7 +93,7 @@
       its own fitted curve.
     </p>
 
-    <h2>The demand model</h2>
+    <h2 id="demand-model">The demand model</h2>
     <p>
       Once your data is aggregated, the analyzer fits a curve through it: a
       mathematical description of how demand falls as price rises. It uses a
@@ -92,7 +105,7 @@
       <em>Q</em> = <em>Q</em><sub>0</sub> · 10<sup><em>k</em>(<em>e</em><sup>−<em>αQ</em><sub>0</sub><em>P</em></sup> − 1)</sup>
     </div>
 
-    <h3 class="param-group">Model parameters</h3>
+    <h3 class="param-group" id="model-parameters">Model parameters</h3>
     <dl class="param-list">
       <dt><em>Q</em><sub>0</sub></dt>
       <dd>How much people want the product when it's free or nearly free.</dd>
@@ -113,7 +126,7 @@
         curve. Most people won't need to change this.</dd>
     </dl>
 
-    <h3 class="param-group">Derived indices</h3>
+    <h3 class="param-group" id="derived-indices">Derived indices</h3>
     <dl class="param-list">
       <dt>AUC</dt>
       <dd>A single number summarizing overall demand across every price you
@@ -173,7 +186,7 @@
       past the highest price you actually tested.
     </p>
 
-    <h3 class="param-group">Fit diagnostic</h3>
+    <h3 class="param-group" id="fit-diagnostic">Fit diagnostic</h3>
     <dl class="param-list">
       <dt>R²</dt>
       <dd>A score from 0 to 1 for how well the curve matches your data.
@@ -184,7 +197,7 @@
         the fitted curve is a fair summary of what's going on.</dd>
     </dl>
 
-    <h2>Fitting procedure</h2>
+    <h2 id="fitting-procedure">Fitting procedure</h2>
     <p>
       Curves are fitted by bounded nonlinear least squares on the aggregated
       points at positive prices, replicating
@@ -205,7 +218,7 @@
       demand</strong>, in which case only α is estimated.
     </p>
 
-    <h2>Individual breakpoints (yes/no data)</h2>
+    <h2 id="individual-breakpoints">Individual breakpoints (yes/no data)</h2>
     <p>
       For yes/no data, the analyzer also works out a breakpoint for each
       respondent: the price where they switch from “yes, I'd buy this” to
@@ -240,7 +253,7 @@
       your browser's local storage on your device.
     </p>
 
-    <h2>References</h2>
+    <h2 id="references">References</h2>
     <p class="reference">
       Borges, A. M., Kuang, J., Milhorn, H., &amp; Yi, R. (2016). An
       alternative approach to calculating area-under-the-curve (AUC) in
@@ -282,6 +295,7 @@
       Psychopharmacology, 23</em>(5), 377–386.
       <a href="https://doi.org/10.1037/pha0000020" target="_blank" rel="noopener">https://doi.org/10.1037/pha0000020</a>
     </p>
+    </div>
   </div>
 </main>
 

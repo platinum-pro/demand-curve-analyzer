@@ -515,7 +515,7 @@
   }
 
   function renderStepper() {
-    var pills = document.querySelectorAll(".step-pill");
+    var pills = document.querySelectorAll(".step-item");
     pills.forEach(function (p) {
       var n = +p.dataset.step;
       p.classList.toggle("active", n === state.step);
@@ -1694,7 +1694,7 @@
     $("sample-btn").addEventListener("click", loadSample);
 
     // stepper navigation
-    document.querySelectorAll(".step-pill").forEach(function (p) {
+    document.querySelectorAll(".step-item").forEach(function (p) {
       p.addEventListener("click", function () {
         var n = +p.dataset.step;
         if (n === 1 || state.fileName) goStep(n);
