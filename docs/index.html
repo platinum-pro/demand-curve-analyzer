@@ -304,6 +304,25 @@
       <p class="hint">The aggregated values the curves are fitted to, at each price.</p>
       <div class="table-scroll" id="agg-table"></div>
 
+      <details class="advanced" id="export-details">
+        <summary>⬇ Export results</summary>
+        <div class="inner">
+          <p class="hint">Figures</p>
+          <div class="btn-row">
+            <button id="export-png">Demand curve (.png)</button>
+            <button id="export-revenue-png">Revenue curve (.png)</button>
+            <button id="export-raster">Individual-response raster (.png)</button>
+            <button id="export-dist">Breakpoint distribution (.png)</button>
+          </div>
+          <p class="hint">Data</p>
+          <div class="btn-row">
+            <button id="export-results">Model parameters (.csv)</button>
+            <button id="export-agg">Aggregated demand (.csv)</button>
+            <button id="export-breakpoints">Individual breakpoints (.csv)</button>
+          </div>
+        </div>
+      </details>
+
       <div class="btn-row">
         <button id="back-2">← Back to mapping</button>
         <button id="dl-agg">Download aggregated CSV</button>
@@ -330,7 +349,7 @@
 <script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
 <script src="assets/js/model.js?v=3.2"></script>
 <script src="assets/js/sample.js?v=1.1"></script>
-<script src="assets/js/app.js?v=4.4"></script>
+<script src="assets/js/app.js?v=4.5"></script>
 <script src="assets/js/nav.js?v=1.5"></script>
 </body>
 </html>

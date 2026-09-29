@@ -684,6 +684,18 @@
     renderIndividuals();
     renderBreakpoints();
     renderAggTable();
+    updateExportVisibility();
+  }
+
+  /* Mirrors the conditional visibility already decided by
+     renderRevenueCurve()/renderIndividuals()/renderBreakpoints() onto the
+     matching buttons in the Export panel, so it never offers a download
+     that isn't actually available (e.g. breakpoint exports on quantity
+     data, or a revenue curve when no series has a valid Pmax). */
+  function updateExportVisibility() {
+    $("export-revenue-png").style.display = $("revenue-details").style.display === "none" ? "none" : "";
+    $("export-dist").style.display = $("dl-dist").style.display;
+    $("export-breakpoints").style.display = $("breakpoint-section").style.display === "none" ? "none" : "";
   }
 
   function renderGroupToggles() {
@@ -1780,6 +1792,14 @@
     $("dl-results").addEventListener("click", downloadResults);
     $("dl-png").addEventListener("click", function () {
       Plotly.downloadImage($("chart"), { format: "png", scale: 3, filename: baseName() + "_demand_curve" });
+    });
+    // Export panel: each button proxies its corresponding original
+    // button rather than duplicating download logic.
+    [["export-png", "dl-png"], ["export-revenue-png", "dl-revenue-png"],
+     ["export-raster", "dl-raster"], ["export-dist", "dl-dist"],
+     ["export-results", "dl-results"], ["export-agg", "dl-agg"],
+     ["export-breakpoints", "dl-breakpoints"]].forEach(function (pair) {
+      $(pair[0]).addEventListener("click", function () { $(pair[1]).click(); });
     });
     $("start-over").addEventListener("click", function () {
       if (confirm("Clear the current session and saved data from this browser?")) {
