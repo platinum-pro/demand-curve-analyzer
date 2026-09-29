@@ -433,10 +433,19 @@
       var systematic = seq.length > 0 && reversals <= 2;
       var allYes = seq.length > 0 && seq.every(function (p) { return p.b === 1; });
       var allNo = seq.length > 0 && seq.every(function (p) { return p.b === 0; });
+      // A respondent who only answered a handful of the price points can
+      // trivially satisfy "all Yes" / "all No" / "no No after the last Yes"
+      // just by having little data, not because they'd actually have kept
+      // buying (or never bought) at the prices they weren't asked about.
+      // Those extreme, whole-range claims require a complete response.
+      var complete = seq.length === cols.length;
 
       var category, bp = null;
       if (seq.length === 0) category = "no data";
       else if (!systematic) category = "nonsystematic (excluded)";
+      else if (!complete && (allYes || allNo || firstNoAfter === null)) {
+        category = "insufficient data (excluded)";
+      }
       else if (allYes) category = "purchased at all prices";
       else if (allNo) category = "never purchased";
       else if (firstNoAfter === null) category = "still purchasing at highest price";
@@ -1090,7 +1099,7 @@
   function renderIndividuals() {
     var mode = results.mode;
     $("indiv-hint").textContent = mode === "binary"
-      ? "Every respondent's raw responses: one row per person, one column per price, sorted by breakpoint. Filled cells are “Yes”; nonsystematic responders appear at the bottom of each block."
+      ? "Every respondent's raw responses: one row per person, one column per price, sorted by breakpoint. Filled cells are “Yes”; nonsystematic or under-answered responders appear at the bottom of each block."
       : "Every respondent's raw responses: one row per person, one column per price, shaded by reported quantity (darker = more), sorted by average quantity.";
     drawRaster();
     var showDist = mode === "binary";
@@ -1131,6 +1140,7 @@
         var b = bpByRow[r];
         if (!b) return -2;
         if (b.category === "nonsystematic (excluded)") return -1;
+        if (b.category === "insufficient data (excluded)") return -0.5;
         if (b.category === "purchased at all prices") return 1e15;
         if (b.category === "still purchasing at highest price") return 1e14;
         if (b.bp != null) return b.bp;
