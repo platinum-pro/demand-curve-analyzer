@@ -32,6 +32,7 @@
       filterVals: []
     },
     derivedCols: [],     // user-created recode columns: {name, srcName}
+    combineOp: null,     // merged experimental-group columns: {groupName, labelA, labelB, itemNames, srcA, srcB}
     step: 1,
     rowsOmittedFromSave: false
   };
@@ -69,7 +70,7 @@
       fileName: state.fileName, headers: state.headers, rows: state.rows,
       roles: state.roles, priceVals: state.priceVals,
       settings: state.settings, clean: state.clean,
-      derivedCols: state.derivedCols, step: state.step
+      derivedCols: state.derivedCols, combineOp: state.combineOp, step: state.step
     };
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(payload));
@@ -172,6 +173,7 @@
     });
     state.clean = defaultClean();
     state.derivedCols = [];
+    state.combineOp = null;
     autoPickGroup();
     state.step = 2;
     hideUploadError();
@@ -1304,6 +1306,7 @@
     renderDerivedList();
     renderDeriveSrcOptions();
     renderDeriveRules();
+    renderCombine();
     renderFilter();
     updateSampleSummary();
   }
@@ -1508,6 +1511,113 @@
     else if (state.settings.groupIdx > idx) state.settings.groupIdx--;
     if (state.clean.filterCol === idx) { state.clean.filterCol = -1; state.clean.filterVals = []; }
     else if (state.clean.filterCol > idx) state.clean.filterCol--;
+    renderClean(); scheduleSave();
+  }
+
+  /* ---------------- combine two experimental-group column sets ---------------- */
+
+  function parseColList(text) {
+    return (text || "").split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s !== ""; });
+  }
+
+  function renderCombine() {
+    var summary = $("combine-summary");
+    var form = $("combine-form");
+    if (state.combineOp) {
+      var op = state.combineOp;
+      summary.innerHTML = "<div class='derived-item'>Merged into “<strong>" + esc(op.groupName) + "</strong>” (" +
+        esc(op.labelA) + " / " + esc(op.labelB) + ") and " + op.itemNames.length + " item column" +
+        (op.itemNames.length === 1 ? "" : "s") + " " +
+        "<button class='quiet' id='combine-del'>remove</button></div>";
+      $("combine-del").addEventListener("click", deleteCombine);
+      form.style.display = "none";
+    } else {
+      summary.innerHTML = "";
+      form.style.display = "";
+    }
+  }
+
+  function addCombine() {
+    var err = $("combine-error");
+    err.textContent = "";
+    function fail(msg) { err.textContent = msg; }
+
+    var colsA = parseColList($("combine-a-cols").value);
+    var colsB = parseColList($("combine-b-cols").value);
+    var newNames = parseColList($("combine-new-names").value);
+    var labelA = ($("combine-a-label").value || "").trim();
+    var labelB = ($("combine-b-label").value || "").trim();
+    var groupName = ($("combine-group-name").value || "").trim();
+
+    if (!colsA.length || !colsB.length || !newNames.length) {
+      return fail("List Group A's columns, Group B's columns, and the new column names.");
+    }
+    if (colsA.length !== colsB.length || colsA.length !== newNames.length) {
+      return fail("All three lists need the same number of lines, one per item.");
+    }
+    if (!labelA || !labelB) return fail("Give each group a label.");
+    if (!groupName) return fail("Name the new grouping column.");
+
+    var idxA = [], idxB = [];
+    for (var i = 0; i < colsA.length; i++) {
+      var ai = state.headers.indexOf(colsA[i]);
+      if (ai < 0) return fail("Column “" + colsA[i] + "” (Group A, line " + (i + 1) + ") wasn't found.");
+      var bi = state.headers.indexOf(colsB[i]);
+      if (bi < 0) return fail("Column “" + colsB[i] + "” (Group B, line " + (i + 1) + ") wasn't found.");
+      idxA.push(ai); idxB.push(bi);
+    }
+
+    while (state.headers.indexOf(groupName) >= 0) groupName += "_2";
+    state.headers.push(groupName);
+    state.roles.push("ignore");
+    state.priceVals.push(null);
+    state.rows.forEach(function (row) {
+      var aFilled = idxA.some(function (ci) { return String(row[ci] == null ? "" : row[ci]).trim() !== ""; });
+      var bFilled = idxB.some(function (ci) { return String(row[ci] == null ? "" : row[ci]).trim() !== ""; });
+      row.push(aFilled ? labelA : bFilled ? labelB : "");
+    });
+
+    var finalNames = [];
+    for (var j = 0; j < newNames.length; j++) {
+      var name = newNames[j];
+      while (state.headers.indexOf(name) >= 0) name += "_2";
+      finalNames.push(name);
+      var role = parsePriceHeader(name) != null ? "price" : "ignore";
+      state.headers.push(name);
+      state.roles.push(role);
+      state.priceVals.push(role === "price" ? parsePriceHeader(name) : null);
+      (function (ai, bi) {
+        state.rows.forEach(function (row) {
+          var aVal = row[ai];
+          row.push(String(aVal == null ? "" : aVal).trim() !== "" ? aVal : row[bi]);
+        });
+      })(idxA[j], idxB[j]);
+    }
+
+    state.combineOp = {
+      groupName: groupName, labelA: labelA, labelB: labelB,
+      itemNames: finalNames, srcA: colsA, srcB: colsB
+    };
+    renderClean(); scheduleSave();
+  }
+
+  function deleteCombine() {
+    if (!state.combineOp) return;
+    var names = state.combineOp.itemNames.concat([state.combineOp.groupName]);
+    var idxs = names.map(function (n) { return state.headers.indexOf(n); })
+      .filter(function (i) { return i >= 0; })
+      .sort(function (a, b) { return b - a; });
+    idxs.forEach(function (idx) {
+      state.headers.splice(idx, 1);
+      state.roles.splice(idx, 1);
+      state.priceVals.splice(idx, 1);
+      state.rows.forEach(function (row) { row.splice(idx, 1); });
+      if (state.settings.groupIdx === idx) state.settings.groupIdx = -1;
+      else if (state.settings.groupIdx > idx) state.settings.groupIdx--;
+      if (state.clean.filterCol === idx) { state.clean.filterCol = -1; state.clean.filterVals = []; }
+      else if (state.clean.filterCol > idx) state.clean.filterCol--;
+    });
+    state.combineOp = null;
     renderClean(); scheduleSave();
   }
 
@@ -1745,6 +1855,7 @@
       renderDeriveRules();
     });
     $("derive-add").addEventListener("click", addDerivedColumn);
+    $("combine-add").addEventListener("click", addCombine);
     $("filter-col").addEventListener("change", function () {
       state.clean.filterCol = +$("filter-col").value;
       state.clean.filterVals = [];
@@ -1841,6 +1952,7 @@
         if (state.settings.showPmaxLines == null) state.settings.showPmaxLines = true;
         state.clean = saved.clean || defaultClean();
         state.derivedCols = saved.derivedCols || [];
+        state.combineOp = saved.combineOp || null;
         state.step = saved.rowsOmitted || !state.rows.length ? 1 : (saved.step || 3);
         $("resume-banner").style.display = "none";
         renderAll();

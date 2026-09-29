@@ -284,6 +284,10 @@ section.step h3 { border-top: 1px solid var(--line); padding-top: 20px; margin-t
    "What do the cells contain?" / "Group comparison column". */
 .clean-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
 .clean-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; background: #fff; }
+/* A third card (Clean & Recode only -- Map Columns always has exactly two)
+   drops to its own full-width row instead of stretching to match a taller
+   neighbor it isn't actually related to. */
+.clean-grid .clean-card:last-child:nth-child(3) { grid-column: 1 / -1; }
 @media (max-width: 780px) {
   .clean-grid { grid-template-columns: 1fr; }
 }

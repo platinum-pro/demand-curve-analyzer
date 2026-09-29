@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015), entirely in your browser.">
-<link rel="stylesheet" href="assets/css/style.css?v=3.6">
+<link rel="stylesheet" href="assets/css/style.css?v=3.7">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -130,6 +130,49 @@
           <div id="derive-rules"></div>
           <div class="btn-row">
             <button id="derive-add">Add column</button>
+          </div>
+        </div>
+
+        <div class="clean-card">
+          <h3>Combine two experimental-group column sets</h3>
+          <p class="hint">
+            For a between-subjects design where each respondent's answers land in
+            one of two column sets (e.g. Google Forms branching by condition),
+            merge them into a single grouping column plus one set of item columns.
+            Both lists below must name the same items in the same order; a
+            respondent's row is assigned to whichever set has data. The original
+            columns are kept.
+          </p>
+          <div id="combine-summary"></div>
+          <div id="combine-form">
+            <div class="field">
+              <label for="combine-a-cols">Group A's columns <span class="note">(one per line, in order)</span></label>
+              <textarea id="combine-a-cols" rows="4" placeholder="P5_A&#10;P25_A&#10;P65_A"></textarea>
+            </div>
+            <div class="field">
+              <label for="combine-a-label">Group A label</label>
+              <input type="text" id="combine-a-label" placeholder="e.g. Control">
+            </div>
+            <div class="field">
+              <label for="combine-b-cols">Group B's columns <span class="note">(one per line, matching order)</span></label>
+              <textarea id="combine-b-cols" rows="4" placeholder="P5_B&#10;P25_B&#10;P65_B"></textarea>
+            </div>
+            <div class="field">
+              <label for="combine-b-label">Group B label</label>
+              <input type="text" id="combine-b-label" placeholder="e.g. Treatment">
+            </div>
+            <div class="field">
+              <label for="combine-new-names">New column names <span class="note">(one per line, matching order)</span></label>
+              <textarea id="combine-new-names" rows="4" placeholder="P5&#10;P25&#10;P65"></textarea>
+            </div>
+            <div class="field">
+              <label for="combine-group-name">New grouping column name</label>
+              <input type="text" id="combine-group-name" placeholder="e.g. Condition">
+            </div>
+            <p class="warn-list" id="combine-error"></p>
+            <div class="btn-row">
+              <button id="combine-add">Combine columns</button>
+            </div>
           </div>
         </div>
 
@@ -364,7 +407,7 @@
 <script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
 <script src="assets/js/model.js?v=3.2"></script>
 <script src="assets/js/sample.js?v=1.1"></script>
-<script src="assets/js/app.js?v=4.6"></script>
+<script src="assets/js/app.js?v=4.7"></script>
 <script src="assets/js/nav.js?v=1.5"></script>
 </body>
 </html>
