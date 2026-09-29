@@ -267,6 +267,15 @@ details.advanced .inner { padding: 10px 0 0 6px; }
 
 h3 { font-size: 1.05rem; margin: 22px 0 6px; }
 section.step h3 { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 24px; }
+/* Cards already provide their own visual separation, so the divider
+   above a card's own heading would be redundant. */
+.clean-card h3:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+.clean-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.clean-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; background: #fff; }
+@media (max-width: 780px) {
+  .clean-grid { grid-template-columns: 1fr; }
+}
 
 /* Org card (shared with HPT Resource Index) */
 .org-card {

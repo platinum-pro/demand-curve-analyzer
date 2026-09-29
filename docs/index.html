@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015), entirely in your browser.">
-<link rel="stylesheet" href="assets/css/style.css?v=3.2">
+<link rel="stylesheet" href="assets/css/style.css?v=3.3">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -100,35 +100,41 @@
         Blank cells in price columns are already treated as missing automatically.
       </p>
 
-      <h3>New grouping variable</h3>
-      <p class="hint">
-        Create a new column by recoding an existing one: collapse categories
-        (sites into regions) or bin numbers into ranges (age into age groups). The
-        original column is kept; the new one appears as a grouping option in the
-        next step.
-      </p>
-      <div id="derived-list"></div>
-      <div class="field">
-        <label for="derive-src">Source column</label>
-        <select id="derive-src"></select>
-      </div>
-      <div class="field">
-        <label for="derive-name">New column name</label>
-        <input type="text" id="derive-name" placeholder="e.g. region">
-      </div>
-      <div id="derive-rules"></div>
-      <div class="btn-row">
-        <button id="derive-add">Add column</button>
-      </div>
+      <div class="clean-grid">
+        <div class="clean-card">
+          <h3>New grouping variable</h3>
+          <p class="hint">
+            Create a new column by recoding an existing one: collapse categories
+            (sites into regions) or bin numbers into ranges (age into age groups). The
+            original column is kept; the new one appears as a grouping option in the
+            next step.
+          </p>
+          <div id="derived-list"></div>
+          <div class="field">
+            <label for="derive-src">Source column</label>
+            <select id="derive-src"></select>
+          </div>
+          <div class="field">
+            <label for="derive-name">New column name</label>
+            <input type="text" id="derive-name" placeholder="e.g. region">
+          </div>
+          <div id="derive-rules"></div>
+          <div class="btn-row">
+            <button id="derive-add">Add column</button>
+          </div>
+        </div>
 
-      <h3>Exclude rows</h3>
-      <p class="hint">Drop respondents from all analyses by a column value (e.g. a failed attention check).</p>
-      <div class="field">
-        <label for="filter-col">Column</label>
-        <select id="filter-col"></select>
+        <div class="clean-card">
+          <h3>Exclude rows</h3>
+          <p class="hint">Drop respondents from all analyses by a column value (e.g. a failed attention check).</p>
+          <div class="field">
+            <label for="filter-col">Column</label>
+            <select id="filter-col"></select>
+          </div>
+          <div id="filter-values" class="filter-values"></div>
+          <p class="hint" id="filter-summary"></p>
+        </div>
       </div>
-      <div id="filter-values" class="filter-values"></div>
-      <p class="hint" id="filter-summary"></p>
 
       <p class="banner" id="sample-summary"></p>
 
