@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015), entirely in your browser.">
-<link rel="stylesheet" href="assets/css/style.css?v=3.5">
+<link rel="stylesheet" href="assets/css/style.css?v=3.6">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -160,26 +160,32 @@
       <h2>Map your columns</h2>
       <p class="hint" id="map-summary"></p>
 
-      <div class="field">
-        <label>What do the cells contain?</label>
-        <div class="radio-row">
-          <label><input type="radio" name="mode" value="binary" checked>
-            <span>Yes/no purchase responses
-              <span class="note">Aggregated as the % of respondents purchasing at each price</span>
-            </span>
-          </label>
-          <label><input type="radio" name="mode" value="quantity">
-            <span>Quantities / units purchased
-              <span class="note">Aggregated as mean consumption at each price</span>
-            </span>
-          </label>
+      <div class="clean-grid">
+        <div class="clean-card">
+          <div class="field">
+            <label>What do the cells contain?</label>
+            <div class="radio-row">
+              <label><input type="radio" name="mode" value="binary" checked>
+                <span>Yes/no purchase responses
+                  <span class="note">Aggregated as the % of respondents purchasing at each price</span>
+                </span>
+              </label>
+              <label><input type="radio" name="mode" value="quantity">
+                <span>Quantities / units purchased
+                  <span class="note">Aggregated as mean consumption at each price</span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="field">
-        <label for="group-select">Group comparison column <span class="note">(optional)</span></label>
-        <select id="group-select"></select>
-        <span class="note">Fits a separate curve for each group, alongside the overall (“All”) curve.</span>
+        <div class="clean-card">
+          <div class="field">
+            <label for="group-select">Group comparison column <span class="note">(optional)</span></label>
+            <select id="group-select"></select>
+            <span class="note">Fits a separate curve for each group, alongside the overall (“All”) curve.</span>
+          </div>
+        </div>
       </div>
 
       <h3>Columns</h3>
