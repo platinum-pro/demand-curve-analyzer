@@ -1413,14 +1413,14 @@
       (tooMany || (numericish && distinctCount > 8) ? "ranges" : "values");
     if (mode === "values" && tooMany) mode = "ranges";
 
-    var html = "<div class='radio-row'>" +
+    var html = "<div class='field'><label>How should this column be recoded?</label><div class='radio-row'>" +
       "<label" + (tooMany ? " title='This column has " + distinctCount + " distinct values — too many to map one by one. Use numeric ranges instead.'" : "") + ">" +
       "<input type='radio' name='derive-mode' value='values'" +
       (mode === "values" ? " checked" : "") + (tooMany ? " disabled" : "") +
       "> Map each value" + (tooMany ? " <span class='note'>(unavailable: this column has " + distinctCount + " distinct values; the limit for one-by-one mapping is 30)</span>" : "") + "</label>" +
       "<label><input type='radio' name='derive-mode' value='ranges'" +
       (mode === "ranges" ? " checked" : "") + "> Numeric ranges</label>" +
-      "</div>";
+      "</div></div>";
 
     if (mode === "values") {
       html += "<p class='hint'>Give each value a new label (leave blank to keep the value unchanged):</p>" +
@@ -1439,6 +1439,7 @@
         "For example, <code>18-29 = Young adult</code> puts everyone from 18 through 29 " +
         "(including both 18 and 29) into a group called “Young adult”.</p>" +
         "<textarea id='derive-ranges' rows='4' placeholder='18-29 = Young adult&#10;30-49 = Middle adult&#10;50-99 = Older adult'></textarea>" +
+        "<hr class='field-divider'>" +
         "<div class='field'><label for='derive-else'>Label for values not covered by any range</label>" +
         "<input type='text' id='derive-else' placeholder='e.g. Other'>" +
         "<span class='note'>If left blank, uncovered values keep their original value.</span></div>" +

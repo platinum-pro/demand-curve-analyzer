@@ -137,12 +137,22 @@
         <div class="clean-card">
           <h3>Combine two experimental-group column sets</h3>
           <p class="hint">
-            For a between-subjects design where each respondent's answers land in
-            one of two column sets (e.g. Google Forms branching by condition),
-            merge them into a single grouping column plus one set of item columns.
-            Both lists below must name the same items in the same order; a
-            respondent's row is assigned to whichever set has data. The original
-            columns are kept.
+            If you ran an experiment where two groups answered the same purchase-task
+            questions, but your survey tool (e.g. Google Forms with branching) gave
+            each group its own copy of those questions, your spreadsheet will have
+            two separate sets of price columns — one filled in for respondents in
+            Group A, the other for Group B, with the unused set blank for each
+            person. This tool merges those two sets of columns into a single set of
+            price columns, and adds one new column recording which group each
+            respondent was in.
+          </p>
+          <p class="hint">
+            List each group's columns below in the order the price points were
+            actually asked in your survey — line 1 across all three lists (Group A,
+            Group B, and the new column names) should refer to the same price
+            point: the version Group A saw, the version Group B saw, and what to
+            call it once merged. Each respondent is placed in whichever group they
+            actually answered. Your original columns are left untouched.
           </p>
           <div id="combine-summary"></div>
           <div id="combine-form">
@@ -410,7 +420,7 @@
 <script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
 <script src="assets/js/model.js?v=3.2"></script>
 <script src="assets/js/sample.js?v=1.1"></script>
-<script src="assets/js/app.js?v=4.7"></script>
+<script src="assets/js/app.js?v=4.8"></script>
 <script src="assets/js/nav.js?v=1.5"></script>
 </body>
 </html>
