@@ -665,6 +665,7 @@
       $("agg-warnings").textContent = "⚠ " + results.error;
       $("result-cards").innerHTML = "";
       $("params-hint").textContent = "";
+      $("compare-table-wrap").style.display = "none";
       $("agg-table").innerHTML = "";
       $("individual-section").style.display = "none";
       $("revenue-details").style.display = "none";
@@ -677,6 +678,7 @@
 
     renderGroupToggles();
     renderCards();
+    renderCompareTable();
     renderChart();
     renderRevenueCurve();
     renderIndividuals();
@@ -790,6 +792,40 @@
       : "Oₘₐₓ and Pₘₐₓ are the peak spending per person, and the price it peaks at — meaningful when price in your study represents a real payment or fee.";
     hint += " AUC is computed directly from the aggregated data, not the fitted curve, so it's unaffected by fit quality — closer to 1 means demand stayed high across the whole price range tested, closer to 0 means it fell off quickly.";
     $("params-hint").textContent = hint;
+  }
+
+  /* At-a-glance comparison across series -- the same numbers as the cards
+     above, but side by side instead of scanning separate cards. Only
+     useful once there's more than one series to compare, so it's hidden
+     for a plain "All"-only result. */
+  function renderCompareTable() {
+    var wrap = $("compare-table-wrap");
+    var mode = results.mode;
+    var vis = visibleSeries();
+    if (vis.length < 2) { wrap.style.display = "none"; return; }
+    wrap.style.display = "";
+
+    var p50Name = mode === "binary" ? "P<sub>50</sub>" : "Price at ½Q₀";
+    var omaxName = "O<sub>max</sub>" + (mode === "binary" ? " (per person)" : "");
+    var html = "<table><thead><tr><th>Series</th><th class='num'>n</th>" +
+      "<th class='num'>" + p50Name + "</th><th class='num'>Q₀</th><th class='num'>α</th>" +
+      "<th class='num'>P<sub>max</sub></th><th class='num'>" + omaxName + "</th>" +
+      "<th class='num'>AUC</th><th class='num'>R²</th><th class='num'>Prices fitted</th></tr></thead><tbody>";
+    vis.forEach(function (s) {
+      var f = s.fit;
+      html += "<tr><td><span class='swatch' style='background:" + s.color + "'></span> " + esc(s.name) + "</td>" +
+        "<td class='num'>" + s.n + "</td>" +
+        "<td class='num'>" + p50Label(s) + "</td>" +
+        "<td class='num'>" + (f.error ? "—" : fmtNum(f.Q0, 1) + (f.q0Fixed ? " (fixed)" : "")) + "</td>" +
+        "<td class='num'>" + (f.error ? "—" : fmtAlpha(f.alpha)) + "</td>" +
+        "<td class='num'>" + fmtPrice(s.pmax) + "</td>" +
+        "<td class='num'>" + fmtPrice(s.omax) + "</td>" +
+        "<td class='num'>" + fmtNum(s.auc, 3) + "</td>" +
+        "<td class='num'>" + (f.error ? "—" : fmtNum(f.rSquared, 3)) + "</td>" +
+        "<td class='num'>" + s.nFitted + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    $("compare-table").innerHTML = html;
   }
 
   function renderChart() {
