@@ -194,12 +194,9 @@
     <section class="step" id="step-4">
       <h2>Results</h2>
 
-      <div class="controls-box">
-        <div class="controls-head">
-          <span class="controls-title">Settings</span>
-          <span class="saved-note" id="saved-note"></span>
-        </div>
-        <div class="controls-grid">
+      <details class="advanced" id="settings-details">
+        <summary>⚙ Analysis settings</summary>
+        <div class="inner controls-grid">
           <div class="field">
             <label for="currency-input">Currency symbol</label>
             <input type="text" id="currency-input" value="₦" maxlength="6">
@@ -210,14 +207,6 @@
             <span class="note">Applies to every curve. The default of 2 means demand can fall to about 1% of Q₀ at very high prices.</span>
           </div>
           <div class="field">
-            <label for="show-groups">Curves shown</label>
-            <select id="show-groups">
-              <option value="all+groups">All + groups</option>
-              <option value="all">All respondents only</option>
-              <option value="groups">Groups only</option>
-            </select>
-          </div>
-          <div class="field">
             <label for="zero-mode">Free (price-0) responses</label>
             <select id="zero-mode">
               <option value="exclude">Exclude from fit (default)</option>
@@ -225,6 +214,23 @@
               <option value="fix">Fix Q₀ at observed price-0 demand</option>
             </select>
             <span class="note">Applies when the data has a free (price-0) condition.</span>
+          </div>
+        </div>
+      </details>
+
+      <div class="controls-box">
+        <div class="controls-head">
+          <span class="controls-title">View options</span>
+          <span class="saved-note" id="saved-note"></span>
+        </div>
+        <div class="controls-grid">
+          <div class="field">
+            <label for="show-groups">Curves shown</label>
+            <select id="show-groups">
+              <option value="all+groups">All + groups</option>
+              <option value="all">All respondents only</option>
+              <option value="groups">Groups only</option>
+            </select>
           </div>
           <div class="field">
             <label>Chart reference lines</label>
