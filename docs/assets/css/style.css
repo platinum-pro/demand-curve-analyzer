@@ -2,9 +2,13 @@
   --ink: #1a1a1a;
   --muted: #666;
   --line: #e0e0e0;
-  --accent: #2b5d8c;
+  /* Matches hpt.promiselabs.africa: logo-derived accent (deep green from
+     the PROMISE Labs Africa mark), darkened from the logo's #08a040 to
+     clear WCAG AA (4.5:1) for normal text -- the logo's own green is
+     only ~3.4:1 against white. */
+  --accent: #067a30;
+  --accent-hover: #056427; /* same ~18% darkening as the previous navy scheme */
   --bg-soft: #f7f7f8;
-  --good: #0a7a33;
   --warn-bg: #fff7e6;
   --warn-line: #e6c37a;
   --radius: 8px;
@@ -41,6 +45,13 @@ main { flex: 1; }
 .brand-logo { height: 32px; width: auto; display: block; }
 .site-header nav a { margin-left: 20px; color: var(--muted); text-decoration: none; font-size: 0.95rem; }
 .site-header nav a:hover { color: var(--accent); }
+.privacy-badge {
+  margin-left: 20px; display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.82rem; color: var(--accent); background: var(--bg-soft);
+  text-decoration: none; white-space: nowrap;
+}
+.privacy-badge:hover { border-color: var(--accent); }
 
 .nav-toggle {
   display: none;
@@ -82,8 +93,8 @@ main { padding: 24px 0 32px; }
 }
 .step-pill.active { border-color: var(--accent); color: var(--accent); }
 .step-pill.active .num { background: var(--accent); border-color: var(--accent); color: #fff; }
-.step-pill.done { color: var(--good); }
-.step-pill.done .num { background: var(--good); border-color: var(--good); color: #fff; }
+.step-pill.done { color: var(--muted); }
+.step-pill.done .num { background: var(--muted); border-color: var(--muted); color: #fff; }
 .step-pill.clickable { cursor: pointer; }
 
 section.step { display: none; }
@@ -121,11 +132,11 @@ button, .btn {
 }
 button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-button.primary:hover { background: #234c73; color: #fff; }
+button.primary:hover { background: var(--accent-hover); color: #fff; }
 button.quiet { border-color: transparent; color: var(--muted); }
 button.quiet:hover { color: var(--accent); }
 button.quiet .link-text { color: var(--accent); text-decoration: underline; }
-button.quiet:hover .link-text { color: #234c73; }
+button.quiet:hover .link-text { color: var(--accent-hover); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-row { display: flex; gap: 10px; margin: 18px 0; flex-wrap: wrap; align-items: center; }
@@ -232,7 +243,7 @@ details.advanced .inner { padding: 10px 0 0 6px; }
 #bp-dist { min-height: 320px; margin-top: 18px; }
 
 .saved-note { font-size: 0.83rem; color: var(--muted); }
-.saved-note.flash { color: var(--good); }
+.saved-note.flash { color: var(--accent); }
 
 .warn-list { color: #8a6100; font-size: 0.88rem; margin: 8px 0; }
 
@@ -318,7 +329,7 @@ p.reference {
   text-decoration: none;
   font-size: 0.95rem;
 }
-.cta:hover { background: #234c73; color: #fff; }
+.cta:hover { background: var(--accent-hover); color: #fff; }
 .copy-feedback {
   margin-left: 10px;
   color: var(--muted);
@@ -345,4 +356,5 @@ p.reference {
     padding: 10px 0;
     border-top: 1px solid var(--line);
   }
+  .privacy-badge { margin: 10px 0 0; }
 }

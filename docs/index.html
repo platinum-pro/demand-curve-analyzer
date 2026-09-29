@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015), entirely in your browser.">
-<link rel="stylesheet" href="assets/css/style.css?v=2.3">
+<link rel="stylesheet" href="assets/css/style.css?v=3.0">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -25,6 +25,7 @@
       <a href="methods.html">Methods</a>
       <a href="about.html">About</a>
       <a href="citation.html">Citation</a>
+      <a class="privacy-badge" href="methods.html#privacy" title="Nothing you upload is transmitted or stored on any server; parsing happens entirely in your browser.">🔒 Local only</a>
     </nav>
   </div>
 </header>
@@ -73,6 +74,20 @@
       <div class="btn-row">
         <button id="sample-btn" class="quiet">No data handy? <span class="link-text">Try the sample dataset →</span></button>
       </div>
+
+      <p class="hint"><strong>What your data should look like:</strong></p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>id</th><th>sex</th><th>0</th><th>50</th><th>100</th><th>200</th></tr></thead>
+          <tbody>
+            <tr><td>R001</td><td>Female</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+            <tr><td>R002</td><td>Male</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+            <tr><td>R003</td><td>Female</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">One row per respondent, one column per price tested. Extra columns like “id” and “sex” are fine; only the columns that look like prices get used for fitting.</p>
+
       <div id="upload-error" class="banner warn" style="display:none;"></div>
     </section>
 
@@ -114,6 +129,8 @@
       </div>
       <div id="filter-values" class="filter-values"></div>
       <p class="hint" id="filter-summary"></p>
+
+      <p class="banner" id="sample-summary"></p>
 
       <div class="btn-row">
         <button id="back-clean">← Back to upload</button>
@@ -295,7 +312,7 @@
 <script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
 <script src="assets/js/model.js?v=3.2"></script>
 <script src="assets/js/sample.js?v=1.1"></script>
-<script src="assets/js/app.js?v=4.1"></script>
+<script src="assets/js/app.js?v=4.2"></script>
 <script src="assets/js/nav.js?v=1.5"></script>
 </body>
 </html>

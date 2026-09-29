@@ -1247,6 +1247,25 @@
     renderDeriveSrcOptions();
     renderDeriveRules();
     renderFilter();
+    updateSampleSummary();
+  }
+
+  /* Consolidated readout of what's actually going into the analysis --
+     renderFilter() only calls updateFilterSummary() when a filter column
+     is selected, so this is also called directly from renderClean() to
+     cover the (common) case where it isn't. */
+  function updateSampleSummary() {
+    var el = $("sample-summary");
+    if (!el || !state.rows.length) return;
+    var total = state.rows.length;
+    var included = includedRowIdxs().length;
+    var excluded = total - included;
+    var derivedCount = state.derivedCols.length;
+    var bits = [];
+    if (excluded > 0) bits.push(excluded + " excluded");
+    if (derivedCount > 0) bits.push(derivedCount + " derived variable" + (derivedCount === 1 ? "" : "s"));
+    el.textContent = "Analysis sample: " + included + " of " + total + " respondent" + (total === 1 ? "" : "s") +
+      (bits.length ? " (" + bits.join(", ") + ")" : "");
   }
 
   function renderDerivedList() {
@@ -1490,7 +1509,8 @@
     var exc = state.rows.length - includedRowIdxs().length;
     $("filter-summary").textContent = exc > 0
       ? "Excluding " + exc + " of " + state.rows.length + " respondents."
-      : "No rows excluded — check a value above to exclude rows with it.";
+      : "No rows excluded: check a value above to exclude rows with it.";
+    updateSampleSummary();
   }
 
   function downloadCleaned() {
