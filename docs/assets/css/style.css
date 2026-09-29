@@ -89,7 +89,12 @@ main { padding: 24px 0 32px; }
   color: var(--muted); font-size: 0.85rem; text-align: center;
 }
 .step-item::before {
-  content: ""; position: absolute; top: 15px; left: 0; right: 50%;
+  /* Each circle sits at the center of its own flex:1 item, not at the
+     item's edge, so the line has to reach backward into the previous
+     item by half a step's width (left: -50%) to actually meet the
+     previous circle -- left: 0 left a gap between circles equal to half
+     the width of each item. */
+  content: ""; position: absolute; top: 15px; left: -50%; right: 50%;
   height: 2px; background: var(--line); z-index: 0;
 }
 .step-item:first-child::before { display: none; }
