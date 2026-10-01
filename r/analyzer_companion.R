@@ -21,6 +21,71 @@ out_dir       <- "."         # where CSV/PNG outputs are written
 # ---------------- Model ----------------
 Koff <- function(x, alpha, Qo, k) Qo * 10^(k * (exp(-alpha * Qo * x) - 1))
 
+# RSS for a given (alpha, Qo) pair -- no fitting, just evaluation. Used to
+# cheaply rank candidate starting points before paying for a full nls() call.
+rss_koff <- function(x, y, alpha, Qo, k_fixed) {
+  sum((y - Koff(x, alpha, Qo, k_fixed))^2)
+}
+
+# Multi-start fit: builds the same seed grid the site's JS fitter uses,
+# ranks seeds by raw RSS, refines the best `n_starts` via nls(), and keeps
+# whichever converged fit has the lowest final RSS. This demand model has a
+# flat, ridge-shaped error surface whenever Q0 sits near its ceiling -- many
+# (alpha, Q0) pairs fit almost equally well -- so a single starting guess
+# can land on a noticeably worse point on that ridge than a multi-start
+# search finds. Mirrors model.js's fit() exactly, including a fixed-Q0
+# (alpha-only) mode for the "fix" zero-price setting.
+fit_koff_multistart <- function(x, y, k_fixed, alpha_max, q0_max = NULL,
+                                 fixed_Q0 = NULL, n_starts = 6) {
+  alpha_seeds <- 10^seq(-10, 0, by = 0.5)
+  alpha_seeds <- alpha_seeds[alpha_seeds > 0 & alpha_seeds <= alpha_max]
+  alpha_seeds <- c(alpha_seeds, 1e-7)  # the single-start value older scripts used
+
+  max_y <- max(y, na.rm = TRUE)
+  q0_seeds <- if (!is.null(fixed_Q0)) fixed_Q0 else c(
+    min(max(max_y, 1e-6), q0_max),
+    min(max(max_y * 1.1, 1e-6), q0_max),
+    q0_max
+  )
+
+  seeds <- expand.grid(alpha = alpha_seeds, Qo = q0_seeds)
+  seeds$rss <- mapply(function(a, q) rss_koff(x, y, a, q, k_fixed), seeds$alpha, seeds$Qo)
+  seeds <- seeds[order(seeds$rss), ]
+
+  best <- NULL
+  for (i in seq_len(min(n_starts, nrow(seeds)))) {
+    # Lower-ranked seeds often don't converge cleanly -- expected when trying
+    # several starting points, and harmless since only the lowest-RSS result
+    # among them is kept, but nls() still emits a warning() for each one;
+    # suppressWarnings() keeps that noise off a researcher's console.
+    fit_try <- if (!is.null(fixed_Q0)) {
+      Koff_fixed <- function(x, alpha) Koff(x, alpha, fixed_Q0, k_fixed)
+      tryCatch(
+        suppressWarnings(nls(y ~ Koff_fixed(x, alpha), data = data.frame(x = x, y = y),
+            start = list(alpha = seeds$alpha[i]), algorithm = "port",
+            lower = c(alpha = 0), upper = c(alpha = alpha_max),
+            control = nls.control(maxiter = 50000, warnOnly = TRUE))),
+        error = function(e) NULL)
+    } else {
+      tryCatch(
+        suppressWarnings(nls(y ~ Koff(x, alpha, Qo, k_fixed), data = data.frame(x = x, y = y),
+            start = list(alpha = seeds$alpha[i], Qo = seeds$Qo[i]), algorithm = "port",
+            lower = c(alpha = 0, Qo = 0), upper = c(alpha = alpha_max, Qo = q0_max),
+            control = nls.control(maxiter = 50000, warnOnly = TRUE))),
+        error = function(e) NULL)
+    }
+    if (!is.null(fit_try)) {
+      this_rss <- sum(residuals(fit_try)^2)
+      if (is.null(best) || this_rss < best$rss) {
+        alpha_hat <- coef(fit_try)[["alpha"]]
+        Qo_hat <- if (!is.null(fixed_Q0)) fixed_Q0 else coef(fit_try)[["Qo"]]
+        best <- list(alpha = alpha_hat, Qo = Qo_hat, rss = this_rss)
+      }
+    }
+  }
+  best  # NULL if every seed failed to converge
+}
+
 # Closed-form price at which predicted demand equals `target`
 # (algebraic inversion of the model; NA when the curve never crosses it)
 p_at_target <- function(alpha, Qo, k, target) {
@@ -136,7 +201,7 @@ if (!is.na(group_col) && group_col %in% names(data)) {
 agg <- data.frame(x = prices)
 for (nm in names(series)) agg[[nm]] <- aggregate_rows(series[[nm]])
 
-# ---------------- Fitting (mirrors the site exactly) ----------------
+# ---------------- Fitting (mirrors the site exactly, multi-start) ----------------
 fit_series <- function(agg_col) {
   d <- data.frame(x = agg$x, All = agg_col)
   d <- d[!is.na(d$All), ]
@@ -155,25 +220,23 @@ fit_series <- function(agg_col) {
 
   if (zero_mode == "fix" && is.finite(observed0) && observed0 > 0) {
     Qo_fixed <- observed0
-    fit <- nls(All ~ Koff(x, alpha, Qo_fixed, k_global),
-               data = pos, start = list(alpha = 1e-7),
-               algorithm = "port", lower = c(alpha = 0),
-               upper = c(alpha = unname(upper["alpha"])),
-               control = nls.control(maxiter = 50000))
-    alpha <- coef(fit)[["alpha"]]; Qo <- Qo_fixed
+    result <- fit_koff_multistart(pos$x, pos$All, k_global,
+                                   alpha_max = unname(upper["alpha"]),
+                                   fixed_Q0 = Qo_fixed)
+    if (is.null(result)) stop("Fit failed to converge (fixed Q0) for one of the series.")
+    alpha <- result$alpha; Qo <- Qo_fixed
     fit_data <- pos; q0_source <- "fixed_at_observed_price0"
   } else {
     fit_data <- if (zero_mode == "include" && nrow(zero)) d else pos
-    fit <- nls(All ~ Koff(x, alpha, Qo, k_global),
-               data = fit_data, start = list(alpha = 1e-7, Qo = 100),
-               algorithm = "port",
-               lower = c(alpha = 0, Qo = 0), upper = upper,
-               control = nls.control(maxiter = 50000))
-    alpha <- coef(fit)[["alpha"]]; Qo <- coef(fit)[["Qo"]]
+    result <- fit_koff_multistart(fit_data$x, fit_data$All, k_global,
+                                   alpha_max = unname(upper["alpha"]),
+                                   q0_max = unname(upper["Qo"]))
+    if (is.null(result)) stop("Fit failed to converge for one of the series.")
+    alpha <- result$alpha; Qo <- result$Qo
     q0_source <- "fitted"
   }
 
-  rss <- sum(residuals(fit)^2)
+  rss <- result$rss
   r2  <- 1 - rss / sum((fit_data$All - mean(fit_data$All))^2)
 
   target <- if (response_mode == "binary") 50 else Qo / 2

@@ -24,25 +24,31 @@ autosave to localStorage so users can resume where they stopped.
 
 ## Validation
 
-The JavaScript fitter is validated against the reference R analysis
-(`nls`, algorithm "port", start α=1e-7 / Q0=100, bounds α∈[0,0.1], Q0∈[0,100]):
+The JavaScript fitter is checked against a single-start R baseline
+(`nls`, algorithm "port", start α=1e-7 / Q0=100, bounds α∈[0,0.1], Q0∈[0,100])
+on synthetic, known-parameter test datasets:
 
 ```sh
 node validation/make_testdata.js   # generate known-parameter test datasets
-Rscript validation/fit_reference.R # fit them with the reference R code
+Rscript validation/fit_reference.R # fit them with the single-start R baseline
 node validation/compare.js         # confirm JS reproduces R (α, Q0, R², RSS, P50)
 ```
 
-Current status: all parameters agree to ≈9 decimal places; P50 agrees within
-R's uniroot tolerance.
+On these test cases, all parameters agree to ≈9 decimal places; P50 agrees
+within R's uniroot tolerance. This baseline is single-start, though, so it
+isn't a reliable check against real data where Q0 sits near its 100 ceiling —
+there the error surface can be flat enough that a single starting guess
+converges to a visibly different (if similarly-fitting) answer than the JS
+fitter's multi-start search finds. `r/analyzer_companion.R` uses that same
+multi-start approach specifically to avoid this gap.
 
 ## R companion script
 
 [`r/analyzer_companion.R`](r/analyzer_companion.R) reproduces the site's entire
-pipeline in R — aggregation, all three zero-price modes, closed-form P50,
-individual breakpoints (adapted Stein et al., 2015 criterion), and the figure.
-Edit the Configuration block, then `Rscript r/analyzer_companion.R`. Verified to
-match the site's output exactly on the sample dataset.
+pipeline in R — aggregation, all three zero-price modes, the same multi-start
+fitting the site uses, closed-form P50, individual breakpoints (adapted Stein
+et al., 2015 criterion), and the figure. Edit the Configuration block, then
+`Rscript r/analyzer_companion.R`.
 
 ## Local development
 
