@@ -280,5 +280,71 @@
     return area;
   }
 
-  return { koff: koff, fit: fit, pAtTarget: pAtTarget, pmax: pmax, lambertW0: lambertW0, rssOf: rssOf, auc: auc };
+  /* Everything the site reports for one series of aggregated points, in one
+     place so the results cards and the bootstrap (which refits resampled
+     data) cannot drift apart. pts: [{x, y}] ascending in x; mode is
+     "binary" or "quantity"; zeroMode is "exclude" | "include" | "fix". */
+  function summarizeSeries(pts, mode, k, zeroMode) {
+    var posPts = pts.filter(function (p) { return p.x > 0; });
+    var zeroPts = pts.filter(function (p) { return p.x === 0; });
+    var observed0 = zeroPts.length
+      ? zeroPts.reduce(function (s, p) { return s + p.y; }, 0) / zeroPts.length
+      : null;
+
+    var maxY = pts.reduce(function (m, p) { return Math.max(m, p.y); }, 0);
+    var opts = mode === "binary"
+      ? { alphaMax: 0.1, q0Max: 100 }
+      : { alphaMax: 1, q0Max: Math.max(10, maxY * 5) };
+
+    // Zero-price handling: exclude (R-script parity), include as a data
+    // point, or fix Q0 at the observed zero-price demand (alpha-only fit).
+    var fitPts = posPts;
+    var q0FixFailed = false;
+    if (zeroMode === "include" && zeroPts.length) fitPts = pts;
+    if (zeroMode === "fix" && observed0 != null) {
+      if (observed0 > 0) opts.fixedQ0 = observed0;
+      else q0FixFailed = true;
+    }
+
+    var f = fitPts.length >= 3 ? fit(fitPts, k, opts) : { error: "Too few valid points." };
+    var p50 = null, p50InRange = null;
+    if (!f.error) {
+      var target = mode === "binary" ? 50 : f.Q0 / 2;
+      var p = pAtTarget(f.alpha, f.Q0, k, target);
+      if (isFinite(p)) {
+        // "In range" means within the prices actually presented to
+        // respondents -- a tested price 0 extends that range downward.
+        var xs = pts.map(function (q) { return q.x; });
+        p50 = p;
+        p50InRange = p >= Math.min.apply(null, xs) && p <= Math.max.apply(null, xs);
+      }
+    }
+    var pmaxVal = null, omaxVal = null;
+    if (!f.error) {
+      var pm = pmax(f.alpha, f.Q0, k);
+      if (isFinite(pm)) {
+        pmaxVal = pm;
+        // Omax: the value of demand at Pmax. For percentage data Q is a
+        // purchase rate, so this is expected revenue per person offered
+        // (Q/100 x P); for quantity data it is the conventional peak
+        // expenditure (Q x P).
+        var qAtPmax = koff(pm, f.alpha, f.Q0, k);
+        omaxVal = pm * (mode === "binary" ? qAtPmax / 100 : qAtPmax);
+      }
+    }
+    // AUC: computed from the raw aggregated points, independent of the fit
+    // and always excluding any price-0 point -- reported even when the fit
+    // itself fails.
+    var aucVal = auc(pts);
+    return {
+      nFitted: fitPts.length, observed0: observed0, q0FixFailed: q0FixFailed,
+      fit: f, p50: p50, p50InRange: p50InRange, pmax: pmaxVal, omax: omaxVal,
+      auc: isFinite(aucVal) ? aucVal : null
+    };
+  }
+
+  return {
+    koff: koff, fit: fit, pAtTarget: pAtTarget, pmax: pmax, lambertW0: lambertW0,
+    rssOf: rssOf, auc: auc, summarizeSeries: summarizeSeries
+  };
 });

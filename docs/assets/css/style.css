@@ -289,6 +289,17 @@ section.step h3 { border-top: 1px solid var(--line); padding-top: 20px; margin-t
    neighbor it isn't actually related to. */
 .clean-grid .clean-card:last-child:nth-child(3) { grid-column: 1 / -1; }
 .field-divider { border: none; border-top: 1px solid var(--line); margin: 16px 0; }
+
+/* "Test whether two groups differ" panel */
+.boot-seed { margin-top: 14px; }
+.boot-seed input { max-width: 160px; }
+#boot-progress { width: 100%; max-width: 420px; height: 8px; margin: 4px 0 10px; accent-color: var(--accent); }
+.boot-result { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; background: #fff; }
+.boot-result .boot-lead { font-size: 1.02rem; margin: 0 0 10px; }
+.boot-result .boot-p { margin: 0 0 10px; }
+.boot-result .boot-meta { font-size: 0.85rem; color: var(--muted); margin: 10px 0 0; }
+.boot-result .boot-warn { color: #8a6100; font-size: 0.88rem; margin: 8px 0 0; }
+.boot-result .btn-row { margin-top: 12px; }
 @media (max-width: 780px) {
   .clean-grid { grid-template-columns: 1fr; }
 }

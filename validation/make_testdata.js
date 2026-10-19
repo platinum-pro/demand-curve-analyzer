@@ -3,7 +3,7 @@
    against the reference R nls fit. Run: node validation/make_testdata.js */
 const fs = require("fs");
 const path = require("path");
-const { koff } = require("../assets/js/model.js");
+const { koff } = require("../docs/assets/js/model.js");
 
 // Deterministic RNG so R and JS see identical files on every run
 function mulberry32(seed) {

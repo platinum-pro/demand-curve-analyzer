@@ -16,7 +16,14 @@ by [PROMISE Labs Africa](https://promiselabs.africa/). Target deployment:
 4. **Fit** the exponentiated demand model (Koffarnus, Franck, Stein & Bickel,
    2015), `Q = Q0 · 10^(k(e^(−αQ0P) − 1))`, with k fixed globally (default 2),
    via bounded least squares. Reports Q0, α, R², and P50.
-5. **Export** the aggregated table, fitted parameters, and a publication-ready
+5. **Test a group difference** (optional) — pick two groups and a measure (P50
+   or AUC). Respondents are resampled with replacement within each group 5,000
+   times, both curves are refit each time, and the tool reports a 95% bootstrap
+   interval and an interval-based p-value for the difference. The resampling
+   runs in a Web Worker (`docs/assets/js/bootstrap-worker.js`) and reuses the
+   same fitter as the results cards (`DCAModel.summarizeSeries`). The seed is
+   shown and editable so a run can be reproduced.
+6. **Export** the aggregated table, fitted parameters, and a publication-ready
    chart PNG.
 
 All processing happens in the browser — no data is uploaded anywhere. Sessions

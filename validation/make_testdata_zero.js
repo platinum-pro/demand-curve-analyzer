@@ -2,7 +2,7 @@
    include-zero and fixed-Q0 fitting modes. Run: node validation/make_testdata_zero.js */
 const fs = require("fs");
 const path = require("path");
-const { koff } = require("../assets/js/model.js");
+const { koff } = require("../docs/assets/js/model.js");
 
 function mulberry32(seed) {
   return function () {

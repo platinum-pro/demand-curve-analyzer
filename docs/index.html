@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demand Curve Analyzer — PROMISE Labs Africa</title>
 <meta name="description" content="Upload hypothetical purchase task survey data, aggregate it, and fit exponentiated demand curves (Koffarnus et al., 2015), entirely in your browser.">
-<link rel="stylesheet" href="assets/css/style.css?v=3.8">
+<link rel="stylesheet" href="assets/css/style.css?v=3.9">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
@@ -329,6 +329,63 @@
         <div class="table-scroll" id="compare-table"></div>
       </div>
 
+      <details class="advanced" id="boot-details" style="display:none;">
+        <summary>Test whether two groups differ</summary>
+        <div class="inner">
+          <p class="hint">
+            Are two groups really different, or could the gap come from which
+            respondents happened to be surveyed? This re-runs your analysis
+            thousands of times on random re-draws of your respondents and shows
+            how much the difference moves from one re-draw to the next.
+          </p>
+          <div class="controls-grid">
+            <div class="field">
+              <label for="boot-a">Group A</label>
+              <select id="boot-a"></select>
+            </div>
+            <div class="field">
+              <label for="boot-b">Group B</label>
+              <select id="boot-b"></select>
+            </div>
+            <div class="field">
+              <label for="boot-measure">Compare them on</label>
+              <select id="boot-measure"></select>
+            </div>
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label>Were respondents randomly assigned to these groups?</label>
+            <div class="radio-row">
+              <label><input type="radio" name="boot-random" value="no" checked>
+                <span>No, or not sure
+                  <span class="note">The groups were observed, not assigned (e.g. gender, income, site)</span>
+                </span>
+              </label>
+              <label><input type="radio" name="boot-random" value="yes">
+                <span>Yes
+                  <span class="note">An experiment with random assignment</span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <div class="field boot-seed">
+            <label for="boot-seed">Random seed</label>
+            <input type="number" id="boot-seed" min="1" step="1">
+            <span class="note">Using the same seed repeats the same result. Change it to check the result is stable.</span>
+          </div>
+          <p class="note" id="boot-multi-note" style="display:none;">
+            This compares one pair of groups. If you run several comparisons,
+            some will look significant by chance alone.
+          </p>
+          <div class="btn-row">
+            <button id="boot-run" class="primary">Run test</button>
+            <button id="boot-cancel" style="display:none;">Cancel</button>
+            <span class="note" id="boot-status"></span>
+          </div>
+          <progress id="boot-progress" max="100" value="0" style="display:none;"></progress>
+          <div id="boot-result"></div>
+        </div>
+      </details>
+
       <div id="chart"></div>
       <div class="btn-row">
         <button id="dl-png">Download chart PNG</button>
@@ -418,9 +475,9 @@
 <script src="assets/js/vendor/papaparse.min.js?v=1.1"></script>
 <script src="assets/js/vendor/xlsx.full.min.js?v=1.1"></script>
 <script src="assets/js/vendor/plotly.min.js?v=1.1"></script>
-<script src="assets/js/model.js?v=3.2"></script>
+<script src="assets/js/model.js?v=3.3"></script>
 <script src="assets/js/sample.js?v=1.1"></script>
-<script src="assets/js/app.js?v=4.8"></script>
+<script src="assets/js/app.js?v=4.9"></script>
 <script src="assets/js/nav.js?v=1.5"></script>
 </body>
 </html>

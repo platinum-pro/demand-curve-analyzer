@@ -326,63 +326,16 @@
 
     var series = seriesDefs.map(function (def) {
       var pts = aggregateSeries(def.rowIdxs, cols, mode, warnings);
-      var posPts = pts.filter(function (p) { return p.x > 0; });
-      var zeroPts = pts.filter(function (p) { return p.x === 0; });
-      var observed0 = zeroPts.length
-        ? zeroPts.reduce(function (s, p) { return s + p.y; }, 0) / zeroPts.length
-        : null;
-
-      var maxY = pts.reduce(function (m, p) { return Math.max(m, p.y); }, 0);
-      var opts = mode === "binary"
-        ? { alphaMax: 0.1, q0Max: 100 }
-        : { alphaMax: 1, q0Max: Math.max(10, maxY * 5) };
-
-      // Zero-price handling: exclude (R-script parity), include as a data
-      // point, or fix Q0 at the observed zero-price demand (alpha-only fit).
-      var fitPts = posPts;
-      if (zeroMode === "include" && zeroPts.length) fitPts = pts;
-      if (zeroMode === "fix" && observed0 != null) {
-        if (observed0 > 0) opts.fixedQ0 = observed0;
-        else warnings.push("“" + def.name + "”: observed price-0 demand is 0, so Q₀ cannot be fixed to it; fitted normally.");
+      var sm = DCAModel.summarizeSeries(pts, mode, k, zeroMode);
+      if (sm.q0FixFailed) {
+        warnings.push("“" + def.name + "”: observed price-0 demand is 0, so Q₀ cannot be fixed to it; fitted normally.");
       }
-
-      var fit = fitPts.length >= 3 ? DCAModel.fit(fitPts, k, opts) : { error: "Too few valid points." };
-      var p50 = null, p50InRange = null;
-      if (!fit.error) {
-        var target = mode === "binary" ? 50 : fit.Q0 / 2;
-        var p = DCAModel.pAtTarget(fit.alpha, fit.Q0, k, target);
-        if (isFinite(p)) {
-          // "In range" means within the prices actually presented to
-          // respondents — a tested price 0 extends that range downward.
-          var xs = pts.map(function (q) { return q.x; });
-          p50 = p;
-          p50InRange = p >= Math.min.apply(null, xs) && p <= Math.max.apply(null, xs);
-        }
-      }
-      var pmaxVal = null, omaxVal = null;
-      if (!fit.error) {
-        var pm = DCAModel.pmax(fit.alpha, fit.Q0, k);
-        if (isFinite(pm)) {
-          pmaxVal = pm;
-          // Omax: the value of demand at Pmax. For percentage data Q is a
-          // purchase rate, so this is expected revenue per person offered
-          // (Q/100 x P); for quantity data it is the conventional peak
-          // expenditure (Q x P).
-          var qAtPmax = DCAModel.koff(pm, fit.alpha, fit.Q0, k);
-          omaxVal = pm * (mode === "binary" ? qAtPmax / 100 : qAtPmax);
-        }
-      }
-      // AUC: computed from the raw aggregated points (log-price adaptation
-      // of Myerson et al., 2001 — see model.js), independent of the fit and
-      // always excluding any price-0 point — reported even when the fit
-      // itself fails.
-      var aucVal = DCAModel.auc(pts);
       return {
         name: def.name, color: def.color, n: def.rowIdxs.length,
         rowIdxs: def.rowIdxs,
-        points: pts, nFitted: fitPts.length, observed0: observed0,
-        fit: fit, p50: p50, p50InRange: p50InRange, pmax: pmaxVal, omax: omaxVal,
-        auc: isFinite(aucVal) ? aucVal : null
+        points: pts, nFitted: sm.nFitted, observed0: sm.observed0,
+        fit: sm.fit, p50: sm.p50, p50InRange: sm.p50InRange, pmax: sm.pmax, omax: sm.omax,
+        auc: sm.auc
       };
     });
 
@@ -680,6 +633,8 @@
       $("agg-table").innerHTML = "";
       $("individual-section").style.display = "none";
       $("revenue-details").style.display = "none";
+      $("boot-details").style.display = "none";
+      bootStop();
       Plotly.purge($("chart"));
       return;
     }
@@ -690,6 +645,7 @@
     renderGroupToggles();
     renderCards();
     renderCompareTable();
+    renderBootPanel();
     renderChart();
     renderRevenueCurve();
     renderIndividuals();
@@ -771,6 +727,332 @@
     });
     html += "</tbody></table>";
     $("breakpoint-table").innerHTML = html;
+  }
+
+  /* ---------------- group-difference test (bootstrap) ---------------- */
+
+  /* Resamples respondents (with replacement, within each group) thousands of
+     times, refits both groups' curves each time, and summarizes how the
+     chosen measure's difference moves. The p-value is the interval-based
+     one: twice the smaller share of re-draws falling on either side of
+     zero. See bootstrap-worker.js for the resampling itself. */
+
+  var BOOT_N = 5000;
+  var boot = { worker: null, result: null };
+
+  function bootGroupSeries() {
+    return results && !results.error ? results.series.slice(1) : [];
+  }
+  function bootSeriesByName(name) {
+    var g = bootGroupSeries();
+    for (var i = 0; i < g.length; i++) if (g[i].name === name) return g[i];
+    return null;
+  }
+  function bootMeasureLabel(measure) {
+    if (measure === "auc") return "AUC";
+    return results && results.mode === "quantity" ? "price at ½Q₀" : "P₅₀";
+  }
+  function bootMeasureValue(s, measure) { return measure === "auc" ? s.auc : s.p50; }
+  function bootFmt(measure, v) { return measure === "auc" ? fmtNum(v, 3) : fmtPrice(v); }
+  function bootFmtSigned(measure, v) {
+    return (v < 0 ? "−" : "+") + bootFmt(measure, Math.abs(v));
+  }
+  function bootQuantile(sorted, q) {
+    var h = (sorted.length - 1) * q, lo = Math.floor(h), hi = Math.ceil(h);
+    return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
+  }
+  function bootModelQuery() {
+    var el = document.querySelector('script[src*="model.js"]');
+    var src = el ? el.getAttribute("src") : "";
+    var q = src.indexOf("?");
+    return q >= 0 ? src.slice(q + 1) : "";
+  }
+  function bootRandomSeed() { return Math.floor(100000 + Math.random() * 900000); }
+
+  function bootSignature() {
+    var a = bootSeriesByName($("boot-a").value), b = bootSeriesByName($("boot-b").value);
+    if (!a || !b) return "";
+    var one = function (s) { return [s.name, s.n, s.p50, s.auc]; };
+    return JSON.stringify([results.mode, state.settings.k, state.settings.zeroMode,
+      results.cols.map(function (c) { return c.x; }), $("boot-measure").value, one(a), one(b)]);
+  }
+
+  function bootStop() {
+    if (boot.worker) { boot.worker.terminate(); boot.worker = null; }
+    $("boot-progress").style.display = "none";
+    $("boot-cancel").style.display = "none";
+  }
+
+  function renderBootPanel() {
+    var det = $("boot-details");
+    var groups = bootGroupSeries();
+    if (!results || results.error || groups.length < 2) {
+      det.style.display = "none";
+      bootStop();
+      boot.result = null;
+      $("boot-result").innerHTML = "";
+      return;
+    }
+    det.style.display = "";
+
+    var prevA = $("boot-a").value, prevB = $("boot-b").value, prevM = $("boot-measure").value;
+    var names = groups.map(function (g) { return g.name; });
+    var opts = names.map(function (n) { return "<option value=\"" + esc(n) + "\">" + esc(n) + "</option>"; }).join("");
+    $("boot-a").innerHTML = opts;
+    $("boot-b").innerHTML = opts;
+    $("boot-a").value = names.indexOf(prevA) >= 0 ? prevA : names[0];
+    $("boot-b").value = names.indexOf(prevB) >= 0 && prevB !== $("boot-a").value ? prevB
+      : names.filter(function (n) { return n !== $("boot-a").value; })[0];
+
+    var quantity = results.mode === "quantity";
+    $("boot-measure").innerHTML =
+      "<option value=\"p50\">" + (quantity ? "Price at ½Q₀ (where demand falls to half of Q₀)" : "P₅₀ (the price at which half would still buy)") + "</option>" +
+      "<option value=\"auc\">AUC (overall demand across the prices tested)</option>";
+    $("boot-measure").value = prevM === "auc" ? "auc" : "p50";
+
+    $("boot-multi-note").style.display = groups.length >= 3 ? "" : "none";
+    if (!$("boot-seed").value) $("boot-seed").value = bootRandomSeed();
+
+    if (boot.result && boot.result.sig !== bootSignature()) {
+      bootStop();
+      boot.result = null;
+      $("boot-result").innerHTML = "";
+    } else if (boot.result) {
+      renderBootResult();   // same analysis; refresh formatting (e.g. currency)
+    }
+    updateBootRunState();
+  }
+
+  function bootProblem() {
+    var a = bootSeriesByName($("boot-a").value), b = bootSeriesByName($("boot-b").value);
+    var measure = $("boot-measure").value;
+    if (!a || !b || a === b) return "Choose two different groups.";
+    var label = bootMeasureLabel(measure);
+    var bad = [a, b].filter(function (s) { return bootMeasureValue(s, measure) == null; })[0];
+    if (bad) {
+      return label.charAt(0).toUpperCase() + label.slice(1) + " can't be computed for “" + bad.name + "”" +
+        (measure === "auc" ? " (too few valid points)." : " (its curve never reaches that level, or the fit failed).") +
+        " Try another measure or group.";
+    }
+    return "";
+  }
+
+  function updateBootRunState() {
+    var problem = bootProblem();
+    $("boot-run").disabled = !!problem || !!boot.worker;
+    if (!boot.worker) $("boot-status").textContent = problem;
+  }
+
+  function onBootInputsChange() {
+    bootStop();
+    boot.result = null;
+    $("boot-result").innerHTML = "";
+    updateBootRunState();
+  }
+
+  function bootMatrix(series, cols, mode) {
+    return series.rowIdxs.map(function (r) {
+      var row = new Float64Array(cols.length);
+      for (var c = 0; c < cols.length; c++) {
+        var cell = state.rows[r][cols[c].idx];
+        var v = mode === "binary" ? toBool(cell) : toNum(cell);
+        row[c] = v == null ? NaN : v;
+      }
+      return row;
+    });
+  }
+
+  function runBoot() {
+    if (boot.worker || bootProblem()) return;
+    var seed = parseInt($("boot-seed").value, 10);
+    if (!isFinite(seed) || seed < 1) { seed = bootRandomSeed(); }
+    $("boot-seed").value = seed;
+
+    var a = bootSeriesByName($("boot-a").value), b = bootSeriesByName($("boot-b").value);
+    var measure = $("boot-measure").value;
+    var sig = bootSignature();
+    var job = {
+      mode: results.mode, k: state.settings.k, zeroMode: state.settings.zeroMode || "exclude",
+      prices: results.cols.map(function (c) { return c.x; }),
+      groupA: bootMatrix(a, results.cols, results.mode),
+      groupB: bootMatrix(b, results.cols, results.mode),
+      measure: measure, nBoot: BOOT_N, seed: seed
+    };
+
+    boot.result = null;
+    $("boot-result").innerHTML = "";
+    $("boot-status").textContent = "Re-drawing respondents…";
+    $("boot-progress").value = 0;
+    $("boot-progress").style.display = "";
+    $("boot-cancel").style.display = "";
+    $("boot-run").disabled = true;
+
+    var worker;
+    try {
+      worker = new Worker("assets/js/bootstrap-worker.js?w=1.0&m=" + encodeURIComponent(bootModelQuery()));
+    } catch (err) {
+      bootStop();
+      $("boot-status").textContent = "This browser couldn't start the background calculation, so the test can't run here.";
+      updateBootRunState();
+      return;
+    }
+    boot.worker = worker;
+    worker.onmessage = function (ev) {
+      var m = ev.data;
+      if (m.type === "progress") {
+        $("boot-progress").value = Math.round(100 * m.done / m.total);
+      } else if (m.type === "done") {
+        bootStop();
+        $("boot-status").textContent = "";
+        boot.result = summarizeBoot(job, a, b, m.drawsA, m.drawsB, sig);
+        renderBootResult();
+        updateBootRunState();
+      } else if (m.type === "error") {
+        bootStop();
+        $("boot-status").textContent = "The test stopped with an error: " + m.message;
+        updateBootRunState();
+      }
+    };
+    worker.onerror = function () {
+      bootStop();
+      $("boot-status").textContent = "The background calculation failed to load. Reload the page and try again.";
+      updateBootRunState();
+    };
+    worker.postMessage(job);
+  }
+
+  function summarizeBoot(job, a, b, drawsA, drawsB, sig) {
+    var diffs = [];
+    for (var i = 0; i < job.nBoot; i++) {
+      if (isFinite(drawsA[i]) && isFinite(drawsB[i])) diffs.push(drawsA[i] - drawsB[i]);
+    }
+    var res = {
+      sig: sig, measure: job.measure, seed: job.seed, nBoot: job.nBoot, nValid: diffs.length,
+      A: { name: a.name, n: a.n, est: bootMeasureValue(a, job.measure) },
+      B: { name: b.name, n: b.n, est: bootMeasureValue(b, job.measure) },
+      drawsA: drawsA, drawsB: drawsB,
+      zeroMode: job.zeroMode, k: job.k
+    };
+    res.obsDiff = res.A.est - res.B.est;
+    if (diffs.length < 200) return res;   // too few usable re-draws to say anything
+
+    var sorted = diffs.slice().sort(function (x, y) { return x - y; });
+    res.lo = bootQuantile(sorted, 0.025);
+    res.hi = bootQuantile(sorted, 0.975);
+    var le = 0, ge = 0;
+    diffs.forEach(function (d) { if (d <= 0) le++; if (d >= 0) ge++; });
+    res.p = Math.min(1, 2 * Math.min(le, ge) / diffs.length);
+
+    // Stability: do two independent halves of the re-draws give about the
+    // same interval? Re-draws are in generation order, so halves are independent.
+    var h = Math.floor(diffs.length / 2);
+    var s1 = diffs.slice(0, h).sort(function (x, y) { return x - y; });
+    var s2 = diffs.slice(h).sort(function (x, y) { return x - y; });
+    var shift = Math.max(
+      Math.abs(bootQuantile(s1, 0.025) - bootQuantile(s2, 0.025)),
+      Math.abs(bootQuantile(s1, 0.975) - bootQuantile(s2, 0.975)));
+    res.unstable = res.hi > res.lo && shift > 0.3 * (res.hi - res.lo);
+    return res;
+  }
+
+  function renderBootResult() {
+    var r = boot.result, box = $("boot-result");
+    if (!r) { box.innerHTML = ""; return; }
+    var m = r.measure, label = bootMeasureLabel(m);
+    var randomized = document.querySelector("input[name='boot-random']:checked").value === "yes";
+    var html = "<div class='boot-result'>";
+
+    if (r.lo == null) {
+      html += "<p class='boot-lead'>Only " + r.nValid.toLocaleString("en-US") + " of " + r.nBoot.toLocaleString("en-US") +
+        " re-draws could compute " + esc(label) + " for both groups, which is too few for a trustworthy interval.</p>" +
+        "<p class='boot-meta'>This usually means the measure is borderline for at least one group (for example, its curve barely reaches the level that defines it). Try AUC, or a different pair of groups.</p></div>";
+      box.innerHTML = html;
+      return;
+    }
+
+    var excludesZero = r.lo > 0 || r.hi < 0;
+    var more = r.obsDiff > 0 ? "higher" : "lower";
+    var lead = "<strong>" + esc(r.A.name) + "</strong>'s " + esc(label) + " is " + bootFmt(m, Math.abs(r.obsDiff)) +
+      " " + more + " than <strong>" + esc(r.B.name) + "</strong>'s (95% interval for the difference: " +
+      bootFmtSigned(m, r.lo) + " to " + bootFmtSigned(m, r.hi) + "). ";
+    if (excludesZero) {
+      lead += randomized
+        ? "Because the interval doesn't include zero, the difference is statistically significant, which is consistent with the manipulation having an effect on this measure."
+        : "Because the interval doesn't include zero, the groups differ on this measure by more than sampling variation alone would plausibly produce.";
+    } else {
+      lead += randomized
+        ? "Because the interval includes zero, these data don't clearly show that the manipulation changed this measure. That is not the same as showing it had no effect."
+        : "Because the interval includes zero, these data don't clearly show a difference between the groups on this measure. That is not the same as showing they're equal.";
+    }
+    html += "<p class='boot-lead'>" + lead + "</p>";
+
+    var pTxt = r.p < 0.001 ? "p < 0.001" : "p = " + r.p.toFixed(3);
+    html += "<p class='boot-p'><strong>Bootstrap p-value:</strong> " + pTxt +
+      " <span class='note'>(interval-based: the share of re-draws on the other side of zero, doubled; the smaller it is, the less plausible a difference of zero)</span></p>";
+
+    html += "<div class='table-scroll'><table><thead><tr><th>Group</th><th class='num'>Respondents</th><th class='num'>" +
+      esc(label.charAt(0).toUpperCase() + label.slice(1)) + "</th></tr></thead><tbody>" +
+      [r.A, r.B].map(function (g) {
+        return "<tr><td>" + esc(g.name) + "</td><td class='num'>" + g.n + "</td><td class='num'>" + bootFmt(m, g.est) + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+
+    var warns = [];
+    [r.A, r.B].forEach(function (g) {
+      if (g.n < 20) warns.push("“" + g.name + "” has only " + g.n + " respondents; intervals from very small groups can be unstable and too narrow.");
+    });
+    var undef = r.nBoot - r.nValid;
+    if (undef / r.nBoot > 0.05) {
+      warns.push(Math.round(100 * undef / r.nBoot) + "% of re-draws couldn't compute " + label + " for both groups, so this interval may be unreliable.");
+    }
+    if (r.unstable) {
+      warns.push("The interval's end values moved noticeably between two halves of the re-draws, so treat them as approximate. Try a different seed to see how much they change.");
+    }
+    warns.forEach(function (w) { html += "<p class='boot-warn'>⚠ " + esc(w) + "</p>"; });
+
+    if (!randomized) {
+      html += "<p class='boot-warn'>Respondents weren't randomly assigned to these groups, so other differences between them could also explain this result. The interval reflects only the sampling variation among the respondents in your data.</p>";
+    }
+
+    html += "<p class='boot-meta'>Based on " + r.nValid.toLocaleString("en-US") + " of " + r.nBoot.toLocaleString("en-US") +
+      " re-draws" + (undef ? " (" + undef.toLocaleString("en-US") + " couldn't be computed)" : "") +
+      ". Random seed " + r.seed + ".</p>" +
+      "<div class='btn-row'><button class='quiet' id='boot-dl-summary'>Download summary (CSV)</button>" +
+      "<button class='quiet' id='boot-dl-draws'>Download all re-draws (CSV)</button></div></div>";
+    box.innerHTML = html;
+    $("boot-dl-summary").addEventListener("click", downloadBootSummary);
+    $("boot-dl-draws").addEventListener("click", downloadBootDraws);
+  }
+
+  function downloadBootSummary() {
+    var r = boot.result;
+    if (!r || r.lo == null) return;
+    var randomized = document.querySelector("input[name='boot-random']:checked").value === "yes";
+    var rows = [
+      ["group_a", JSON.stringify(r.A.name)], ["group_b", JSON.stringify(r.B.name)],
+      ["measure", r.measure === "auc" ? "auc" : (results.mode === "quantity" ? "price_at_half_Q0" : "p50")],
+      ["n_a", r.A.n], ["n_b", r.B.n],
+      ["estimate_a", r.A.est], ["estimate_b", r.B.est],
+      ["difference_a_minus_b", r.obsDiff],
+      ["interval_low_95", r.lo], ["interval_high_95", r.hi],
+      ["p_value_interval_based", r.p],
+      ["resamples", r.nBoot], ["valid_resamples", r.nValid], ["seed", r.seed],
+      ["randomly_assigned", randomized ? "yes" : "no_or_unsure"],
+      ["k", r.k], ["zero_price_mode", r.zeroMode]
+    ];
+    downloadText(baseName() + "_group-test_summary.csv",
+      "field,value\n" + rows.map(function (x) { return x[0] + "," + x[1]; }).join("\n") + "\n");
+  }
+
+  function downloadBootDraws() {
+    var r = boot.result;
+    if (!r) return;
+    var lines = ["resample,group_a_value,group_b_value,difference_a_minus_b"];
+    for (var i = 0; i < r.nBoot; i++) {
+      var a = r.drawsA[i], b = r.drawsB[i];
+      lines.push([i + 1, isFinite(a) ? a : "", isFinite(b) ? b : "",
+        isFinite(a) && isFinite(b) ? a - b : ""].join(","));
+    }
+    downloadText(baseName() + "_group-test_resamples.csv", lines.join("\n") + "\n");
   }
 
   function p50Label(s) {
@@ -1857,6 +2139,18 @@
     });
     $("derive-add").addEventListener("click", addDerivedColumn);
     $("combine-add").addEventListener("click", addCombine);
+    $("boot-run").addEventListener("click", runBoot);
+    $("boot-cancel").addEventListener("click", function () {
+      bootStop();
+      updateBootRunState();
+      $("boot-status").textContent = "Cancelled.";
+    });
+    ["boot-a", "boot-b", "boot-measure"].forEach(function (id) {
+      $(id).addEventListener("change", onBootInputsChange);
+    });
+    document.querySelectorAll("input[name='boot-random']").forEach(function (r) {
+      r.addEventListener("change", renderBootResult);
+    });
     $("filter-col").addEventListener("change", function () {
       state.clean.filterCol = +$("filter-col").value;
       state.clean.filterVals = [];

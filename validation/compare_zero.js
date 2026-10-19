@@ -3,7 +3,7 @@
    Run from the project root: node validation/compare_zero.js */
 const fs = require("fs");
 const path = require("path");
-const { fit } = require("../assets/js/model.js");
+const { fit } = require("../docs/assets/js/model.js");
 
 const K = 2;
 const rRows = fs.readFileSync(path.join(__dirname, "r_results_zero.csv"), "utf8")
